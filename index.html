@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Protocollo Inglese</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -32,7 +32,7 @@
   --bg:#0c1117; --surface:#151c25; --surface2:#202a36; --fg:#e8eef5; --muted:#94a2b3; --line:#2a3543;
   --sem:#35c9b6; --quo:#f2a742; --tec:#9498f8; --gold:#f0c24a; --ok:#5cc274; --warn:#ef8b4f; --on:#0c1117; color-scheme:dark}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0}
+html,body{height:100%;margin:0;touch-action:pan-x pan-y}   /* niente zoom con due dita o doppio tocco */
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--f-body);height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 .pager{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
@@ -40,7 +40,13 @@ body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--f-body);height:100
 .view{flex:0 0 100%;min-width:0;overflow-y:auto;scroll-snap-align:start;scroll-snap-stop:always;display:grid;gap:22px;align-content:start;-webkit-overflow-scrolling:touch;
   padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:calc(110px + env(safe-area-inset-bottom,0px));
   padding-left:max(16px,env(safe-area-inset-left,0px),calc(50% - 340px));padding-right:max(16px,env(safe-area-inset-right,0px),calc(50% - 340px))}
+.view{scrollbar-width:none}
+.view::-webkit-scrollbar{display:none}
 .view > *{min-width:0}
+.track textarea{font:inherit;font-weight:700;font-size:1.02rem;line-height:1.3;color:var(--fg);background:transparent;border:1px solid transparent;border-radius:10px;padding:4px 6px;margin-left:-6px;width:100%;resize:none;overflow:hidden;display:block}
+.track textarea:hover,.track textarea:focus{background:var(--bg);border-color:var(--line)}
+#loglist{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:.86rem}
+#loglist span{color:var(--muted);font-family:var(--f-mono);font-size:.76rem;display:block}
 h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
 h1{font-size:1.75rem;font-weight:800}
 h1::first-letter{text-transform:uppercase}
@@ -364,6 +370,11 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       </div>
       <p class="hint">Su iPhone la notifica funziona solo dall’app aggiunta alla schermata Home: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
     </section>
+    <details>
+      <summary>Cronologia</summary>
+      <div><p class="hint">Le ultime azioni fatte nell’app, dalla più recente.</p><ul id="loglist"></ul></div>
+    </details>
+
     <section style="display:grid;gap:10px" aria-labelledby="h-rules">
       <h2 id="h-rules">Regole</h2>
       <p class="hint">Audio sempre in inglese, sottotitoli spenti, anche quelli in inglese. Il tempo va diviso in parti uguali tra i tre tipi. Semplificato e tecnico: stesso spezzone finché non capisci l’80%. Quotidiano: ogni giorno roba nuova.</p>
@@ -500,6 +511,7 @@ const $ = id => document.getElementById(id);
 const ls = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} } };
 
 let days = {};            // data -> documento del giorno (minuti se u==='min', altrimenti vecchi blocchi da 15′)
+let log = [];             // cronologia delle azioni: {t:'AAAA-MM-GG HH:MM:SS', e:'cosa'}
 let state = null;         // documento state/current
 let openNext = null;      // quale traccia mostra il modulo "80%"
 let editId = null;        // parola in modifica
@@ -530,7 +542,7 @@ const dec = b => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b.repl
 const fail = r => Object.assign(new Error('GitHub '+r.status), {status:r.status});
 async function getFile(path){ const r = await api(path); if(r.status===404) return null; if(!r.ok) throw fail(r); const j = await r.json(); return {sha:j.sha, data:dec(j.content)}; }
 const putFile = (path, data, fsha) => api(path, {method:'PUT', body: JSON.stringify({message:'app: '+path, content: enc(data), sha: fsha || undefined})});
-function cache(){ ls.set('cache', JSON.stringify({days, state, feed, report, sha})); ls.set('dirty', dirty ? '1' : '0'); }
+function cache(){ ls.set('cache', JSON.stringify({days, state, log, feed, report, sha})); ls.set('dirty', dirty ? '1' : '0'); }
 function setStatus(msg){ const b = $('nosave'); b.hidden = !msg; b.textContent = msg || ''; $('set-status').textContent = msg || (token ? 'Collegato: i dati si salvano nel tuo archivio privato.' : ''); }
 const errMsg = (e, offline) => e.status===401 || e.status===403 || e.status===404 ? 'Chiave non valida o scaduta: tocca qui e reinseriscila.' : offline;
 function queueSave(){ dirty = true; cache(); clearTimeout(saveTimer); saveTimer = setTimeout(push, 1200); }
@@ -538,11 +550,17 @@ async function push(){
   if(!token || saving || !dirty) return;
   saving = true; dirty = false; let wait = 1200;
   try{
-    let r = await putFile('data.json', {days, state}, sha);
-    if(r.status===409 || r.status===422){      // un altro dispositivo ha scritto: tengo i suoi giorni passati, il mio oggi e il mio stato
+    let r = await putFile('data.json', {days, state, log}, sha);
+    if(r.status===409 || r.status===422){      // un altro dispositivo (o Claude dal PC) ha scritto nel frattempo
       const cur = await getFile('data.json');
-      if(cur){ sha = cur.sha; days = Object.assign({}, cur.data.days, days[TODAY] ? {[TODAY]: days[TODAY]} : {}); }
-      r = await putFile('data.json', {days, state}, sha);
+      if(cur){
+        const last = ((cur.data.log || []).slice(-1)[0] || {}).t || '';
+        sha = cur.sha; days = Object.assign({}, cur.data.days, days[TODAY] ? {[TODAY]: days[TODAY]} : {});
+        state = cur.data.state || state;      // shortcut: sullo stato vince chi ha scritto prima, i minuti di oggi restano i miei; unire campo per campo se i dispositivi diventano più di due
+        log = (cur.data.log || []).concat(log.filter(x => x.t > last)).slice(-500);
+        renderAll(); toast('Dati aggiornati da un altro dispositivo: controlla l’ultima modifica.');
+      }
+      r = await putFile('data.json', {days, state, log}, sha);
     }
     if(!r.ok) throw fail(r);
     sha = (await r.json()).content.sha; setStatus('');
@@ -552,19 +570,20 @@ async function push(){
 }
 async function pull(){
   if(!token || dirty || saving) return;
-  const a = document.activeElement; if(a && a.tagName==='INPUT' && a.id!=='tok') return;      // non ridisegnare sotto il cursore mentre scrivi
+  const a = document.activeElement; if(a && /INPUT|TEXTAREA/.test(a.tagName) && a.id!=='tok') return;      // non ridisegnare sotto il cursore mentre scrivi
   try{
     const [d, f, rp] = await Promise.all([getFile('data.json'), getFile('feed.json'), getFile('report.json')]);
     if(!d) throw {status:404};
     if(dirty || saving) return;
-    sha = d.sha; days = d.data.days || {}; state = d.data.state || {}; if(f) feed = f.data; if(rp) report = rp.data;
+    sha = d.sha; days = d.data.days || {}; state = d.data.state || {}; log = d.data.log || []; if(f) feed = f.data; if(rp) report = rp.data;
     cache(); setStatus('');
     if(!$('w-src').value && state.tec && state.tec.topic) $('w-src').value = state.tec.topic;
     renderAll();
   }catch(e){ setStatus(errMsg(e, 'Senza rete: vedi gli ultimi dati salvati sul telefono.')); }
 }
 const sync = () => dirty ? push() : pull();
-function saveState(patch){ state = Object.assign({}, state, patch); renderAll(); queueSave(); }
+function logEv(e){ const n = new Date(); log = log.concat({t: ymd(n)+' '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds()), e}).slice(-500); }
+function saveState(patch, ev){ if(ev) logEv(ev); state = Object.assign({}, state, patch); renderAll(); queueSave(); }
 
 /* ---------- avvisi e coriandoli ---------- */
 let toastTimer;
@@ -593,7 +612,7 @@ function setMin(k, v){
   const before = today(), g = goal();
   const t = Object.assign({}, before, {[k]: Math.max(0, v)});
   days[TODAY] = {date:TODAY, sem:t.sem, quo:t.quo, tec:t.tec, u:'min', g};
-  renderAll(); queueSave();
+  logEv(NAMES[k]+': '+before[k]+'′ → '+t[k]+'′'); renderAll(); queueSave();
   const was = K.every(x => before[x]>=g), is = K.every(x => t[x]>=g);
   if(!was && is){ confetti(); toast('Obiettivo di oggi raggiunto: '+g*3+'′'); }
   else if(!K.every(x => before[x]>=MIN) && K.every(x => t[x]>=MIN)) toast('Minimo fatto: la serie continua');
@@ -627,12 +646,12 @@ function renderToday(){
 function renderPlan(){
   const type = weekType();
   const box = $('weektypes'); box.textContent = '';
-  Object.entries(WEEKS).forEach(([k,label]) => box.append(el('button',{type:'button','aria-pressed':String(type===k), onclick:()=>saveState({week:{type:k, monday:mondayOf(new Date())}})}, label)));
+  Object.entries(WEEKS).forEach(([k,label]) => box.append(el('button',{type:'button','aria-pressed':String(type===k), onclick:()=>saveState({week:{type:k, monday:mondayOf(new Date())}}, 'settimana: '+label)}, label)));
   $('weekhint').textContent = type ? 'Scelta valida fino a domenica. Lunedì la scegli di nuovo.' : 'Sceglila una volta, il lunedì: da qui dipendono obiettivo e scaletta di ogni giorno.';
   const plan = $('plan'); plan.textContent = '';
   const sh = (state && state.shifts) || {}, tom = addDays(TODAY, 1), sb = $('shifts'); sb.textContent = '';
   // tengo solo oggi e domani, così i turni vecchi non si accumulano
-  [[TODAY,'Oggi'],[tom,'Domani']].forEach(([d,l]) => [6,7].forEach(h => sb.append(el('button',{type:'button','aria-pressed':String(sh[d]===h), onclick:()=>saveState({shifts:{[TODAY]:sh[TODAY], [tom]:sh[tom], [d]:h}})}, l+' '+h+'-'+(h+8)))));
+  [[TODAY,'Oggi'],[tom,'Domani']].forEach(([d,l]) => [6,7].forEach(h => sb.append(el('button',{type:'button','aria-pressed':String(sh[d]===h), onclick:()=>saveState({shifts:{[TODAY]:sh[TODAY], [tom]:sh[tom], [d]:h}}, 'turno '+l.toLowerCase()+': '+h+'-'+(h+8))}, l+' '+h+'-'+(h+8)))));
   const h = sh[TODAY], when = h ? {'Andata al lavoro':'Andata al lavoro, prima delle '+h, 'Prime ore del turno':'Prime ore del turno, dalle '+h, 'Dalle 13':'Dalle 13 alle '+(h+8), 'Ritorno a casa':'Ritorno a casa, dopo le '+(h+8)} : {};
   todayPlan().rows.forEach(r => plan.append(el('div',{class:'step'}, el('span',{class:'when'}, when[r[0]] || r[0]), el('span',{class:'what'}, r[1]))));
   const names = {1:'Lun',2:'Mar',3:'Mer',4:'Gio',5:'Ven',6:'Sab',0:'Dom'}, wd = new Date().getDay();
@@ -641,6 +660,7 @@ function renderPlan(){
   const table = $('weektable'); table.textContent = '';
   table.append(el('table',{}, el('thead',{}, el('tr',{}, el('th',{},'Giorno'), el('th',{},'Tipo'), el('th',{},'Obiettivo'), el('th',{},'Totale'))), body));
 }
+const fit = t => { t.style.height = 'auto'; t.style.height = t.scrollHeight+2+'px'; };
 function renderNow(){
   const box = $('now'); box.textContent = '';
   if(!state){ box.append(el('p',{class:'empty'}, 'Sto caricando i tuoi spezzoni…')); return; }
@@ -652,12 +672,15 @@ function renderNow(){
     const left = Math.max(0, p.target - t[k]);
     const card = el('div',{class:'track t-'+k});
     card.append(el('div',{class:'top'}, el('span',{class:'tag'}, NAMES[k]+(k==='tec' && cur.topic ? ' · '+cur.topic : '')), el('span',{class:'where mono'}, left ? 'ancora '+left+'′' : 'fatto')));
-    const inp = el('input',{type:'text', id:'cur-'+k, value:cur.label||'', 'aria-label':'Spezzone '+NAMES[k], placeholder: k==='quo' ? 'es. The Office S1E2, minuto 12' : 'spezzone in corso'});
-    inp.onchange = () => saveState({[k]: Object.assign({}, cur, {label: inp.value.trim(), since: cur.since || TODAY})});
+    const inp = el('textarea',{rows:'1', id:'cur-'+k, 'aria-label':'Spezzone '+NAMES[k], placeholder: k==='quo' ? 'es. The Office S1E2, minuto 12' : 'spezzone in corso'});
+    inp.value = cur.label || '';
+    inp.oninput = () => fit(inp);
+    inp.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } };
+    inp.onchange = () => saveState({[k]: Object.assign({}, cur, {label: inp.value.trim(), since: cur.since || TODAY}, k==='tec' ? {url:null} : {})}, 'spezzone '+NAMES[k]+': '+inp.value.trim());
     card.append(inp, el('div',{class:'where'}, (k==='tec' ? p.tec : p.tv)+(age ? ' · '+age : '')));
     if(k==='tec'){
       const tp = el('div',{class:'chips', role:'group', 'aria-label':'Podcast in corso'});
-      TOPICS.forEach(x => tp.append(el('button',{type:'button','aria-pressed': String(cur.topic===x), onclick:()=>saveState({tec:Object.assign({},cur,{topic:x})})}, x)));
+      TOPICS.forEach(x => tp.append(el('button',{type:'button','aria-pressed': String(cur.topic===x), onclick:()=>saveState({tec:Object.assign({},cur,{topic:x})}, 'podcast in corso: '+x)}, x)));
       card.append(tp);
     }
     if(k!=='quo'){
@@ -670,16 +693,18 @@ function renderNow(){
           const hist = (state.history||[]).slice(-99);
           hist.push({type:k, label:cur.label||'', topic:cur.topic||null, from:cur.since||TODAY, to:TODAY});
           openNext = null;
-          saveState({[k]: Object.assign({}, cur, {label, since: TODAY}, k==='tec' ? {topic: nextTopic(cur.topic)} : {}), history: hist});
+          saveState({[k]: Object.assign({}, cur, {label, since: TODAY}, k==='tec' ? {topic: nextTopic(cur.topic), url: sug && label===epLabel(nextTopic(cur.topic), sug) ? sug.url || null : null} : {}), history: hist}, '80% '+NAMES[k]+': '+(cur.label||'')+' → '+label);
           confetti(); toast('Spezzone chiuso all’80%. Avanti col prossimo.');
         }}, el('span',{class:'hint'}, 'Hai capito l’80% di “'+(cur.label||'questo spezzone')+'”. '+(k==='tec' ? 'Tocca a '+nextTopic(cur.topic)+': scrivi quale episodio prendi.' : 'Con cosa vai avanti?')), nin,
           el('div',{class:'row'}, el('button',{type:'submit', class:'btn solid'}, 'Passo a questo'), el('button',{type:'button', class:'ghost', onclick:()=>{ openNext = null; renderNow(); }}, 'Annulla'))));
         setTimeout(() => nin.focus(), 0);
-      } else card.append(el('div',{class:'row'}, el('button',{type:'button', class:'btn', onclick:()=>{ openNext = k; renderNow(); }}, 'Capisco l’80%, cambio')));
+      } else card.append(el('div',{class:'row'}, el('button',{type:'button', class:'btn', onclick:()=>{ openNext = k; renderNow(); }}, 'Capisco l’80%, cambio'),
+        k==='tec' && cur.url ? el('a',{class:'ghost', href:cur.url, target:'_blank', rel:'noopener', style:'text-decoration:none'}, 'Apri in Apple Podcasts') : null));
     }
     box.append(card);
   }
   const done = (state.history||[]).slice(-3).reverse();
+  box.querySelectorAll('textarea').forEach(fit);
   $('recent').textContent = done.length ? 'Chiusi di recente: '+done.map(h => h.label+' ('+(daysBetween(h.from,h.to)||1)+' gg)').join(' · ') : '';
 }
 
@@ -744,7 +769,7 @@ function answer(g){
     p.revDays = [...new Set([...((state && state.revDays) || []), TODAY])].slice(-200);
     confetti(); toast('Ripasso finito: '+n+(n===1?' carta':' carte'));
   }
-  saveState(p);
+  saveState(p, 'ripasso: '+w.w+' → '+['di nuovo','difficile','bene','facile'][g]+(r.again ? '' : ', torna tra '+r.ivl+' g')+(quiz ? '' : ' · ripasso finito'));
 }
 function renderQuiz(){
   const box = $('quiz'); box.textContent = '';
@@ -813,7 +838,7 @@ function renderWords(){
   const list = all.filter(w => (wFilter==='all' || (wFilter==='got')===w.got) && (!q || (w.w+' '+w.t+' '+w.src).toLowerCase().includes(q))).reverse();
   const ul = $('words'); ul.textContent = '';
   if(!list.length){ ul.append(el('li',{class:'empty'}, all.length ? 'Nessuna parola con questo filtro.' : 'Ancora nessuna parola. Aggiungi la prima qui sopra: parola, traduzione se la sai, e da dove viene.')); return; }
-  const put = ws => saveState({words: ws});
+  const put = (ws, ev) => saveState({words: ws}, ev);
   list.forEach(w => {
     const tr = w.t
       ? el('button',{type:'button', class:'tr'+(hideTr?' hid':''), 'aria-label': hideTr ? 'Mostra la traduzione di '+w.w : null, onclick:e=>e.currentTarget.classList.remove('hid')}, w.t)
@@ -823,9 +848,9 @@ function renderWords(){
       el('div',{class:'meta'}, w.src ? el('span',{class:'loc'}, w.src) : null, el('span',{}, fmtDay(w.date)),
         w.t && !w.got ? el('span',{}, !w.due ? '· nuova' : w.due<=TODAY ? '· da ripassare oggi' : '· ripasso tra '+fmtIvl(daysBetween(TODAY,w.due))) : null,
         el('div',{class:'acts'},
-          el('button',{type:'button', onclick:()=>{ put(all.map(x => x.id===w.id ? Object.assign({},x,{got:!x.got}) : x)); if(!w.got) toast('“'+w.w+'” imparata: esce dal ripasso'); }}, w.got ? 'Rimetti nel ripasso' : 'La so già'),
+          el('button',{type:'button', onclick:()=>{ put(all.map(x => x.id===w.id ? Object.assign({},x,{got:!x.got}) : x), (w.got ? 'parola rimessa nel ripasso: ' : 'parola segnata come saputa: ')+w.w); if(!w.got) toast('“'+w.w+'” imparata: esce dal ripasso'); }}, w.got ? 'Rimetti nel ripasso' : 'La so già'),
           el('button',{type:'button', onclick:()=>startEdit(w)}, 'Modifica'),
-          el('button',{type:'button', 'aria-label':'Elimina '+w.w, onclick:()=>{ put(all.filter(x => x.id!==w.id)); toast('Parola eliminata', () => put(all)); }}, 'Elimina')))));
+          el('button',{type:'button', 'aria-label':'Elimina '+w.w, onclick:()=>{ put(all.filter(x => x.id!==w.id), 'parola eliminata: '+w.w); toast('Parola eliminata', () => put(all, 'eliminazione annullata: '+w.w)); }}, 'Elimina')))));
   });
 }
 function startEdit(w){
@@ -846,7 +871,7 @@ $('wform').onsubmit = e => {
   if(editId) ws = ws.map(x => x.id===editId ? Object.assign({}, x, {w, t, src}) : x);
   else ws = ws.slice(-499).concat({id: Date.now().toString(36), w, t, src, date: TODAY, got:false});
   const edited = !!editId; endEdit();
-  saveState({words: ws}); toast(edited ? 'Parola aggiornata' : 'Parola aggiunta'); $('w-word').focus();
+  saveState({words: ws}, (edited ? 'parola modificata: ' : 'parola aggiunta: ')+w+(t ? ' = '+t : '')); toast(edited ? 'Parola aggiornata' : 'Parola aggiunta'); $('w-word').focus();
 };
 $('w-q').oninput = renderWords;
 $('w-hide').onclick = () => { hideTr = !hideTr; ls.set('hideTr', hideTr ? '1' : '0'); renderWords(); };
@@ -925,7 +950,12 @@ function renderProgress(){
   else { const ul = el('ul',{class:'words'}); hist.forEach(h => ul.append(el('li',{class:'word t-'+h.type}, el('div',{class:'main'}, el('span',{class:'tag'}, NAMES[h.type]||''), el('b',{}, h.label)), el('div',{class:'meta'}, el('span',{}, (daysBetween(h.from,h.to)||1)+' giorni · chiuso il '+fmtDay(h.to)))))); hb.append(ul); }
 }
 
-function renderAll(){ renderReport(); renderPlan(); renderToday(); renderNow(); renderFeed(); renderQuiz(); renderWords(); renderProgress(); }
+function renderLog(){
+  const ul = $('loglist'); ul.textContent = '';
+  if(!log.length) ul.append(el('li',{class:'hint'}, 'Ancora niente.'));
+  log.slice(-40).reverse().forEach(x => ul.append(el('li',{}, el('span',{}, x.t), x.e)));
+}
+function renderAll(){ renderLog(); renderReport(); renderPlan(); renderToday(); renderNow(); renderFeed(); renderQuiz(); renderWords(); renderProgress(); }
 
 /* ---------- viste: scorrimento col dito, barra che segue ---------- */
 const VIEWS = ['oggi','parole','progressi','guida'];
@@ -973,12 +1003,16 @@ $('pushbtn').onclick = async () => {
     const cur = await getFile('push.json');
     const subs = ((cur && cur.data.subs) || []).filter(x => x.endpoint!==sub.endpoint).concat(sub);
     const r = await putFile('push.json', {subs}, cur && cur.sha); if(!r.ok) throw fail(r);
+    logEv('notifiche attivate su questo dispositivo'); queueSave();
     toast('Notifica del mattino attiva su questo dispositivo');
   }catch(e){ toast('Non sono riuscito ad attivarla: '+(e.message || e.status)); }
 };
 
+document.addEventListener('gesturestart', e => e.preventDefault());      // Safari: blocca lo zoom con due dita
+if(document.fonts) document.fonts.ready.then(() => document.querySelectorAll('#now textarea').forEach(fit));
+
 /* ---------- avvio ---------- */
-try{ const c = JSON.parse(ls.get('cache') || 'null'); if(c){ days = c.days || {}; state = c.state || null; feed = c.feed || null; report = c.report || null; sha = c.sha || null; } }catch(e){}
+try{ const c = JSON.parse(ls.get('cache') || 'null'); if(c){ days = c.days || {}; log = c.log || []; state = c.state || null; feed = c.feed || null; report = c.report || null; sha = c.sha || null; } }catch(e){}
 if(!state && !token) state = {};
 $('date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 renderAll();
