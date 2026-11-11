@@ -31,7 +31,7 @@
 :root[data-theme="dark"]{
   --bg:#0c1117; --surface:#151c25; --surface2:#202a36; --fg:#e8eef5; --muted:#94a2b3; --line:#2a3543;
   --sem:#35c9b6; --quo:#f2a742; --tec:#9498f8; --gold:#f0c24a; --ok:#5cc274; --warn:#ef8b4f; --on:#0c1117; color-scheme:dark}
-*{box-sizing:border-box}
+*{box-sizing:border-box;touch-action:pan-x pan-y}
 html,body{height:100%;margin:0;touch-action:pan-x pan-y}   /* niente zoom con due dita o doppio tocco */
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--f-body);height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
@@ -60,7 +60,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 button:disabled{opacity:.4;cursor:default}
 a{color:var(--tec)}
 :focus-visible{outline:3px solid var(--tec);outline-offset:2px}
-input[type=text],input[type=search],input[type=password]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0;box-sizing:border-box}
+input[type=text],input[type=search],input[type=password]{font:inherit;font-size:16px;font-weight:400;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0;box-sizing:border-box}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:14px}
 .t-sem{--accent:var(--sem)} .t-quo{--accent:var(--quo)} .t-tec{--accent:var(--tec)}
 .banner{background:color-mix(in srgb,var(--warn) 16%,var(--surface));border:0;border-radius:12px;padding:10px 12px;font-size:.9rem;text-align:left;width:100%}
@@ -173,6 +173,11 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 #report{gap:8px;border-color:color-mix(in srgb,var(--tec) 45%,var(--line))}
 #report ul{margin:0;padding-left:18px;display:grid;gap:4px}
 
+.ep{font-size:.9rem;color:var(--accent)}
+.btn.ok{background:var(--ok);border-color:transparent;animation:pop .35s}
+@keyframes pop{50%{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.btn.ok{animation:none}}
+
 /* progressi */
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (min-width:560px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
@@ -259,6 +264,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <p class="hint" id="weekhint"></p>
       <h2 id="h-shift">Che turno fai</h2>
       <div class="chips" id="shifts" role="group" aria-label="Orario del turno"></div>
+      <p class="hint">Tocca di nuovo un turno scelto per toglierlo.</p>
     </section>
 
     <section aria-labelledby="h-now" style="display:grid;gap:10px">
@@ -612,6 +618,7 @@ function setMin(k, v){
   const before = today(), g = goal();
   const t = Object.assign({}, before, {[k]: Math.max(0, v)});
   days[TODAY] = {date:TODAY, sem:t.sem, quo:t.quo, tec:t.tec, u:'min', g};
+  if(k==='quo' && state) state = Object.assign({}, state, {quo: advanceEp(state.quo, t.quo-before.quo)});
   logEv(NAMES[k]+': '+before[k]+'′ → '+t[k]+'′'); renderAll(); queueSave();
   const was = K.every(x => before[x]>=g), is = K.every(x => t[x]>=g);
   if(!was && is){ confetti(); toast('Obiettivo di oggi raggiunto: '+g*3+'′'); }
@@ -651,7 +658,7 @@ function renderPlan(){
   const plan = $('plan'); plan.textContent = '';
   const sh = (state && state.shifts) || {}, tom = addDays(TODAY, 1), sb = $('shifts'); sb.textContent = '';
   // tengo solo oggi e domani, così i turni vecchi non si accumulano
-  [[TODAY,'Oggi'],[tom,'Domani']].forEach(([d,l]) => [6,7].forEach(h => sb.append(el('button',{type:'button','aria-pressed':String(sh[d]===h), onclick:()=>saveState({shifts:{[TODAY]:sh[TODAY], [tom]:sh[tom], [d]:h}}, 'turno '+l.toLowerCase()+': '+h+'-'+(h+8))}, l+' '+h+'-'+(h+8)))));
+  [[TODAY,'Oggi'],[tom,'Domani']].forEach(([d,l]) => [6,7].forEach(h => sb.append(el('button',{type:'button','aria-pressed':String(sh[d]===h), onclick:()=>saveState({shifts:{[TODAY]:sh[TODAY], [tom]:sh[tom], [d]: sh[d]===h ? null : h}}, 'turno '+l.toLowerCase()+': '+(sh[d]===h ? 'tolto' : h+'-'+(h+8)))}, l+' '+h+'-'+(h+8)))));
   const h = sh[TODAY], when = h ? {'Andata al lavoro':'Andata al lavoro, prima delle '+h, 'Prime ore del turno':'Prime ore del turno, dalle '+h, 'Dalle 13':'Dalle 13 alle '+(h+8), 'Ritorno a casa':'Ritorno a casa, dopo le '+(h+8)} : {};
   todayPlan().rows.forEach(r => plan.append(el('div',{class:'step'}, el('span',{class:'when'}, when[r[0]] || r[0]), el('span',{class:'what'}, r[1]))));
   const names = {1:'Lun',2:'Mar',3:'Mer',4:'Gio',5:'Ven',6:'Sab',0:'Dom'}, wd = new Date().getDay();
@@ -672,12 +679,20 @@ function renderNow(){
     const left = Math.max(0, p.target - t[k]);
     const card = el('div',{class:'track t-'+k});
     card.append(el('div',{class:'top'}, el('span',{class:'tag'}, NAMES[k]+(k==='tec' && cur.topic ? ' · '+cur.topic : '')), el('span',{class:'where mono'}, left ? 'ancora '+left+'′' : 'fatto')));
-    const inp = el('textarea',{rows:'1', id:'cur-'+k, 'aria-label':'Spezzone '+NAMES[k], placeholder: k==='quo' ? 'es. The Office S1E2, minuto 12' : 'spezzone in corso'});
+    const inp = el('textarea',{rows:'1', id:'cur-'+k, 'aria-label':'Spezzone '+NAMES[k], placeholder: k==='quo' ? 'es. The Office' : 'spezzone in corso'});
     inp.value = cur.label || '';
     inp.oninput = () => fit(inp);
     inp.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } };
     inp.onchange = () => saveState({[k]: Object.assign({}, cur, {label: inp.value.trim(), since: cur.since || TODAY}, k==='tec' ? {url:null} : {})}, 'spezzone '+NAMES[k]+': '+inp.value.trim());
     card.append(inp, el('div',{class:'where'}, (k==='tec' ? p.tec : p.tv)+(age ? ' · '+age : '')));
+    if(k==='quo'){
+      const q = advanceEp(cur, 0), setQ = (pos, ev) => saveState({quo: Object.assign({}, q, pos)}, ev);
+      card.append(el('div',{class:'ep mono'}, 'Stagione '+q.s+' · episodio '+q.e+' · minuto '+q.min+' di '+EP_LEN),
+        el('div',{class:'row'},
+          el('button',{type:'button', class:'btn', onclick:()=>setQ({e:q.e+1, min:0}, 'quotidiano: finito S'+q.s+' E'+q.e)}, 'Episodio finito'),
+          el('button',{type:'button', class:'ghost', disabled: q.e>1 ? null : '', onclick:()=>setQ({e:q.e-1, min:0}, 'quotidiano: torno a S'+q.s+' E'+(q.e-1))}, 'Episodio prima'),
+          el('button',{type:'button', class:'ghost', onclick:()=>setQ({s:q.s+1, e:1, min:0}, 'quotidiano: stagione '+(q.s+1))}, 'Stagione dopo')));
+    }
     if(k==='tec'){
       const tp = el('div',{class:'chips', role:'group', 'aria-label':'Podcast in corso'});
       TOPICS.forEach(x => tp.append(el('button',{type:'button','aria-pressed': String(cur.topic===x), onclick:()=>saveState({tec:Object.assign({},cur,{topic:x})}, 'podcast in corso: '+x)}, x)));
@@ -871,7 +886,9 @@ $('wform').onsubmit = e => {
   if(editId) ws = ws.map(x => x.id===editId ? Object.assign({}, x, {w, t, src}) : x);
   else ws = ws.slice(-499).concat({id: Date.now().toString(36), w, t, src, date: TODAY, got:false});
   const edited = !!editId; endEdit();
-  saveState({words: ws}, (edited ? 'parola modificata: ' : 'parola aggiunta: ')+w+(t ? ' = '+t : '')); toast(edited ? 'Parola aggiornata' : 'Parola aggiunta'); $('w-word').focus();
+  saveState({words: ws}, (edited ? 'parola modificata: ' : 'parola aggiunta: ')+w+(t ? ' = '+t : '')); if(document.activeElement) document.activeElement.blur();
+  const b = $('w-save'); b.textContent = '✓ '+(edited ? 'Aggiornata' : 'Aggiunta'); b.classList.add('ok');
+  setTimeout(() => { b.classList.remove('ok'); if(!editId) b.textContent = 'Aggiungi parola'; }, 1300);
 };
 $('w-q').oninput = renderWords;
 $('w-hide').onclick = () => { hideTr = !hideTr; ls.set('hideTr', hideTr ? '1' : '0'); renderWords(); };

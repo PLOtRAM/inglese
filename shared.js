@@ -49,4 +49,15 @@ const epLabel = (name, e) => name+' · '+epTitle(e)+' ('+e.min+'′)';
 // Parole da ripassare in una certa data
 const dueOf = (words, today) => (words || []).filter(w => w.t && !w.got && (!w.due || w.due<=today));
 
-if(typeof module!=='undefined') module.exports = {K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};
+// Quotidiano: posizione nella serie. Ogni minuto segnato sposta la posizione; a fine episodio si passa al successivo.
+const EP_LEN = 20;      // shortcut: durata fissa di un episodio, renderla per serie se cambia con la prossima serie
+function advanceEp(q, delta){
+  const o = Object.assign({s:1, e:1, min:0}, q); o.min += delta;
+  while(o.min>=EP_LEN){ o.min -= EP_LEN; o.e++; }
+  while(o.min<0 && o.e>1){ o.min += EP_LEN; o.e--; }
+  if(o.min<0) o.min = 0;
+  return o;
+}
+const quoLabel = q => q && q.label ? q.label+(q.e ? ' · S'+(q.s||1)+' E'+q.e+(q.min ? ', dal minuto '+q.min : '') : '') : '';
+
+if(typeof module!=='undefined') module.exports = {EP_LEN, advanceEp, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};
