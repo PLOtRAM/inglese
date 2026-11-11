@@ -164,6 +164,9 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .pod.first{border-color:var(--tec)}
 .pod b{overflow-wrap:anywhere}
 
+#report{gap:8px;border-color:color-mix(in srgb,var(--tec) 45%,var(--line))}
+#report ul{margin:0;padding-left:18px;display:grid;gap:4px}
+
 /* progressi */
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (min-width:560px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
@@ -226,6 +229,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
     </div>
   </header>
     <button type="button" class="banner" id="nosave" hidden></button>
+    <section class="card" id="report" aria-label="Report del mattino" hidden></section>
     <section class="card" aria-labelledby="h-goal">
       <div class="goalrow">
         <div>
@@ -247,6 +251,8 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <h2 id="h-week">Che settimana è</h2>
       <div class="chips" id="weektypes" role="group" aria-label="Tipo di settimana"></div>
       <p class="hint" id="weekhint"></p>
+      <h2 id="h-shift">Che turno fai</h2>
+      <div class="chips" id="shifts" role="group" aria-label="Orario del turno"></div>
     </section>
 
     <section aria-labelledby="h-now" style="display:grid;gap:10px">
@@ -524,7 +530,7 @@ const dec = b => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b.repl
 const fail = r => Object.assign(new Error('GitHub '+r.status), {status:r.status});
 async function getFile(path){ const r = await api(path); if(r.status===404) return null; if(!r.ok) throw fail(r); const j = await r.json(); return {sha:j.sha, data:dec(j.content)}; }
 const putFile = (path, data, fsha) => api(path, {method:'PUT', body: JSON.stringify({message:'app: '+path, content: enc(data), sha: fsha || undefined})});
-function cache(){ ls.set('cache', JSON.stringify({days, state, feed, sha})); ls.set('dirty', dirty ? '1' : '0'); }
+function cache(){ ls.set('cache', JSON.stringify({days, state, feed, report, sha})); ls.set('dirty', dirty ? '1' : '0'); }
 function setStatus(msg){ const b = $('nosave'); b.hidden = !msg; b.textContent = msg || ''; $('set-status').textContent = msg || (token ? 'Collegato: i dati si salvano nel tuo archivio privato.' : ''); }
 const errMsg = (e, offline) => e.status===401 || e.status===403 || e.status===404 ? 'Chiave non valida o scaduta: tocca qui e reinseriscila.' : offline;
 function queueSave(){ dirty = true; cache(); clearTimeout(saveTimer); saveTimer = setTimeout(push, 1200); }
@@ -548,10 +554,10 @@ async function pull(){
   if(!token || dirty || saving) return;
   const a = document.activeElement; if(a && a.tagName==='INPUT' && a.id!=='tok') return;      // non ridisegnare sotto il cursore mentre scrivi
   try{
-    const [d, f] = await Promise.all([getFile('data.json'), getFile('feed.json')]);
+    const [d, f, rp] = await Promise.all([getFile('data.json'), getFile('feed.json'), getFile('report.json')]);
     if(!d) throw {status:404};
     if(dirty || saving) return;
-    sha = d.sha; days = d.data.days || {}; state = d.data.state || {}; if(f) feed = f.data;
+    sha = d.sha; days = d.data.days || {}; state = d.data.state || {}; if(f) feed = f.data; if(rp) report = rp.data;
     cache(); setStatus('');
     if(!$('w-src').value && state.tec && state.tec.topic) $('w-src').value = state.tec.topic;
     renderAll();
@@ -624,7 +630,11 @@ function renderPlan(){
   Object.entries(WEEKS).forEach(([k,label]) => box.append(el('button',{type:'button','aria-pressed':String(type===k), onclick:()=>saveState({week:{type:k, monday:mondayOf(new Date())}})}, label)));
   $('weekhint').textContent = type ? 'Scelta valida fino a domenica. Lunedì la scegli di nuovo.' : 'Sceglila una volta, il lunedì: da qui dipendono obiettivo e scaletta di ogni giorno.';
   const plan = $('plan'); plan.textContent = '';
-  todayPlan().rows.forEach(r => plan.append(el('div',{class:'step'}, el('span',{class:'when'}, r[0]), el('span',{class:'what'}, r[1]))));
+  const sh = (state && state.shifts) || {}, tom = addDays(TODAY, 1), sb = $('shifts'); sb.textContent = '';
+  // tengo solo oggi e domani, così i turni vecchi non si accumulano
+  [[TODAY,'Oggi'],[tom,'Domani']].forEach(([d,l]) => [6,7].forEach(h => sb.append(el('button',{type:'button','aria-pressed':String(sh[d]===h), onclick:()=>saveState({shifts:{[TODAY]:sh[TODAY], [tom]:sh[tom], [d]:h}})}, l+' '+h+'-'+(h+8)))));
+  const h = sh[TODAY], when = h ? {'Andata al lavoro':'Andata al lavoro, prima delle '+h, 'Prime ore del turno':'Prime ore del turno, dalle '+h, 'Dalle 13':'Dalle 13 alle '+(h+8), 'Ritorno a casa':'Ritorno a casa, dopo le '+(h+8)} : {};
+  todayPlan().rows.forEach(r => plan.append(el('div',{class:'step'}, el('span',{class:'when'}, when[r[0]] || r[0]), el('span',{class:'what'}, r[1]))));
   const names = {1:'Lun',2:'Mar',3:'Mer',4:'Gio',5:'Ven',6:'Sab',0:'Dom'}, wd = new Date().getDay();
   const body = el('tbody');
   [1,2,3,4,5,6,0].forEach(d => { const x = planFor(d); body.append(el('tr',{class: d===wd ? 'is-today' : null}, el('td',{},names[d]), el('td',{},x.kind), el('td',{},x.target+'′ per tipo'), el('td',{},x.target*3+'′'))); });
@@ -674,15 +684,21 @@ function renderNow(){
 }
 
 /* ---------- PROSSIMI PODCAST (titoli scritti nel db da fuori: feed/latest) ---------- */
-let feed = null;
+let feed = null, report = null;
 const pickEp = name => pickEpIn(feed, name);
+function renderReport(){
+  const box = $('report'), on = report && report.date===TODAY && report.lines; box.hidden = !on; box.textContent = '';
+  if(!on) return;
+  const ul = el('ul',{}); report.lines.forEach(l => ul.append(el('li',{}, l)));
+  box.append(el('div',{class:'eyebrow'}, 'Report del mattino'), el('h3',{}, report.title), ul);
+}
 function renderFeed(){
   const box = $('pods'); box.textContent = '';
   if(!feed || !feed.pods){ box.append(el('li',{class:'empty'}, 'Qui compaiono i titoli dei prossimi episodi, appena arrivano.')); $('podsnote').textContent = ''; return; }
   const start = Math.max(0, TOPICS.indexOf(state && state.tec && state.tec.topic));
   for(let i=1;i<=TOPICS.length;i++){
     const name = TOPICS[(start+i)%TOPICS.length], e = pickEp(name); if(!e) continue;
-    box.append(el('li',{class:'pod'+(i===1?' first':'')}, el('span',{class:'tag'}, name+(i===1?' · il prossimo':'')), el('b',{}, epTitle(e)),
+    box.append(el('li',{class:'pod'+(i===1?' first':'')}, el('span',{class:'tag'}, name+(i===1?' · il prossimo':'')), e.url ? el('a',{href:e.url, target:'_blank', rel:'noopener'}, el('b',{}, epTitle(e))) : el('b',{}, epTitle(e)),
       el('span',{class:'where'}, e.min+'′ · uscito il '+fmtDay(e.date)+(e.min>30 ? ' · ascolta i primi 15-20′' : ''))));
   }
   $('podsnote').textContent = 'Titoli aggiornati il '+fmtDay(feed.updated)+'. Quando chiudi un podcast all’80%, prendi l’episodio più recente di quello dopo.';
@@ -709,6 +725,7 @@ function srs(w, step, g){
 }
 /*END*/
 // shortcut: nessun limite di carte nuove al giorno, metterlo se le parole diventano centinaia
+let revIt = ls.get('revDir')==='it';     // true: carta dall'italiano all'inglese
 let quiz = null;          // sessione in corso: {queue:[id], steps:{id:passo}, shown, done}
 const addDays = (d,n) => { const x = new Date(d+'T12:00'); x.setDate(x.getDate()+n); return ymd(x); };
 const fmtIvl = n => n<30 ? n+' g' : n<365 ? (n/30).toLocaleString('it-IT',{maximumFractionDigits:1})+' mesi' : (n/365).toLocaleString('it-IT',{maximumFractionDigits:1})+' anni';
@@ -748,13 +765,14 @@ function renderQuiz(){
       box.append(el('h2',{}, doneToday ? 'Fatto per oggi' : 'Niente da ripassare'),
         el('p',{class:'hint'}, nd ? 'Prossima carta '+(n===1 ? 'domani' : 'tra '+n+' giorni')+'.' : 'Aggiungi una parola con la traduzione e la trovi subito qui.'));
     }
+    box.append(el('div',{class:'row'}, el('button',{type:'button', class:'ghost', onclick:()=>{ revIt = !revIt; ls.set('revDir', revIt ? 'it' : 'en'); renderQuiz(); }}, revIt ? 'Direzione: italiano → inglese' : 'Direzione: inglese → italiano')));
     if(noTr) box.append(el('p',{class:'hint'}, noTr+(noTr===1?' parola è':' parole sono')+' senza traduzione: entrano nel ripasso quando la aggiungi.'));
     return;
   }
   const w = ws.find(x => x.id===quiz.queue[0]), step = quiz.steps[w.id];
   box.append(el('div',{class:'hint mono'}, quiz.queue.length+' rimaste · '+quiz.done+' fatte'),
-    el('div',{class:'fc'}, el('div',{class:'fc-w'}, w.w), w.src ? el('span',{class:'loc'}, w.src) : null, quiz.shown ? el('div',{class:'fc-t'}, w.t) : null));
-  if(!quiz.shown) box.append(el('button',{type:'button', class:'show', onclick:()=>{ quiz.shown = true; renderQuiz(); }}, 'Mostra la traduzione'));
+    el('div',{class:'fc'}, el('div',{class:'fc-w'}, revIt ? w.t : w.w), w.src ? el('span',{class:'loc'}, w.src) : null, quiz.shown ? el('div',{class:'fc-t'}, revIt ? w.w : w.t) : null));
+  if(!quiz.shown) box.append(el('button',{type:'button', class:'show', onclick:()=>{ quiz.shown = true; renderQuiz(); }}, 'Mostra la risposta'));
   else {
     const gs = el('div',{class:'grades', role:'group', 'aria-label':'Come è andata'});
     ['Di nuovo','Difficile','Bene','Facile'].forEach((l,g) => { const r = srs(w, step, g);
@@ -907,7 +925,7 @@ function renderProgress(){
   else { const ul = el('ul',{class:'words'}); hist.forEach(h => ul.append(el('li',{class:'word t-'+h.type}, el('div',{class:'main'}, el('span',{class:'tag'}, NAMES[h.type]||''), el('b',{}, h.label)), el('div',{class:'meta'}, el('span',{}, (daysBetween(h.from,h.to)||1)+' giorni · chiuso il '+fmtDay(h.to)))))); hb.append(ul); }
 }
 
-function renderAll(){ renderPlan(); renderToday(); renderNow(); renderFeed(); renderQuiz(); renderWords(); renderProgress(); }
+function renderAll(){ renderReport(); renderPlan(); renderToday(); renderNow(); renderFeed(); renderQuiz(); renderWords(); renderProgress(); }
 
 /* ---------- viste: scorrimento col dito, barra che segue ---------- */
 const VIEWS = ['oggi','parole','progressi','guida'];
@@ -960,7 +978,7 @@ $('pushbtn').onclick = async () => {
 };
 
 /* ---------- avvio ---------- */
-try{ const c = JSON.parse(ls.get('cache') || 'null'); if(c){ days = c.days || {}; state = c.state || null; feed = c.feed || null; sha = c.sha || null; } }catch(e){}
+try{ const c = JSON.parse(ls.get('cache') || 'null'); if(c){ days = c.days || {}; state = c.state || null; feed = c.feed || null; report = c.report || null; sha = c.sha || null; } }catch(e){}
 if(!state && !token) state = {};
 $('date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 renderAll();
