@@ -782,6 +782,13 @@ function srs(w, step, g){
 /*END*/
 // shortcut: nessun limite di carte nuove al giorno, metterlo se le parole diventano centinaia
 let revIt = ls.get('revDir')==='it';     // true: carta dall'italiano all'inglese
+// Pronuncia con la voce inglese del dispositivo; se ne hai scaricata una migliore (Premium o Enhanced) uso quella
+const canSpeak = 'speechSynthesis' in window;
+function speak(t){
+  const u = new SpeechSynthesisUtterance(t), vs = speechSynthesis.getVoices().filter(v => /^en[-_]US/i.test(v.lang));
+  u.lang = 'en-US'; u.rate = .9; u.voice = vs.find(v => /premium/i.test(v.name)) || vs.find(v => /enhanced/i.test(v.name)) || null;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
 let quiz = null;          // sessione in corso: {queue:[id], steps:{id:passo}, shown, done}
 const addDays = (d,n) => { const x = new Date(d+'T12:00'); x.setDate(x.getDate()+n); return ymd(x); };
 const fmtIvl = n => n<30 ? n+' g' : n<365 ? (n/30).toLocaleString('it-IT',{maximumFractionDigits:1})+' mesi' : (n/365).toLocaleString('it-IT',{maximumFractionDigits:1})+' anni';
@@ -827,7 +834,8 @@ function renderQuiz(){
   }
   const w = ws.find(x => x.id===quiz.queue[0]), step = quiz.steps[w.id];
   box.append(el('div',{class:'hint mono'}, quiz.queue.length+' rimaste · '+quiz.done+' fatte'),
-    el('div',{class:'fc'}, el('div',{class:'fc-w'}, revIt ? w.t : w.w), w.src ? el('span',{class:'loc'}, w.src) : null, quiz.shown ? el('div',{class:'fc-t'}, revIt ? w.w : w.t) : null));
+    el('div',{class:'fc'}, el('div',{class:'fc-w'}, revIt ? w.t : w.w), w.src ? el('span',{class:'loc'}, w.src) : null, quiz.shown ? el('div',{class:'fc-t'}, revIt ? w.w : w.t) : null,
+      canSpeak && (!revIt || quiz.shown) ? el('button',{type:'button', class:'ghost', onclick:()=>speak(w.w)}, 'Ascolta') : null));
   if(!quiz.shown) box.append(el('button',{type:'button', class:'show', onclick:()=>{ quiz.shown = true; renderQuiz(); }}, 'Mostra la risposta'));
   else {
     const gs = el('div',{class:'grades', role:'group', 'aria-label':'Come è andata'});
@@ -880,6 +888,7 @@ function renderWords(){
         w.t && !w.got ? el('span',{}, !w.due ? '· nuova' : w.due<=TODAY ? '· da ripassare oggi' : '· ripasso tra '+fmtIvl(daysBetween(TODAY,w.due))) : null,
         el('div',{class:'acts'},
           el('button',{type:'button', onclick:()=>{ put(all.map(x => x.id===w.id ? Object.assign({},x,{got:!x.got}) : x), (w.got ? 'parola rimessa nel ripasso: ' : 'parola segnata come saputa: ')+w.w); if(!w.got) toast('“'+w.w+'” imparata: esce dal ripasso'); }}, w.got ? 'Rimetti nel ripasso' : 'La so già'),
+          canSpeak ? el('button',{type:'button', onclick:()=>speak(w.w)}, 'Ascolta') : null,
           el('button',{type:'button', onclick:()=>startEdit(w)}, 'Modifica'),
           el('button',{type:'button', 'aria-label':'Elimina '+w.w, onclick:()=>{ put(all.filter(x => x.id!==w.id), 'parola eliminata: '+w.w); toast('Parola eliminata', () => put(all, 'eliminazione annullata: '+w.w)); }}, 'Elimina')))));
   });
