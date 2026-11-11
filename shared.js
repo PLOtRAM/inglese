@@ -60,4 +60,22 @@ function advanceEp(q, delta){
 }
 const quoLabel = q => q && q.label ? q.label+(q.e ? ' · S'+(q.s||1)+' E'+q.e+(q.min ? ', dal minuto '+q.min : '') : '') : '';
 
-if(typeof module!=='undefined') module.exports = {EP_LEN, advanceEp, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};
+// Minuti per tipo di un giorno (i documenti vecchi senza u:'min' sono blocchi da 15′)
+const minsOf = d => { const f = d && d.u==='min' ? 1 : 15, o = {}; K.forEach(k => { o[k] = ((d && d[k]) || 0)*f; }); return o; };
+// Serie di giorni col minimo (15′ per tipo). Ogni mese arriva un jolly e si accumulano: un giorno saltato ne consuma uno e la serie non si rompe.
+function streakOf(days, today){
+  const first = Object.keys(days).sort()[0], used = []; let run = 0, best = 0, bank = 0, month = '';
+  if(!first) return {streak:0, best:0, bank:0, used};
+  for(let d = new Date(first+'T12:00'), dt = first; dt<=today; d.setDate(d.getDate()+1), dt = ymd(d)){
+    if(dt.slice(0,7)!==month){ month = dt.slice(0,7); bank++; }
+    const v = minsOf(days[dt]);
+    if(K.every(k => v[k]>=15)) run++;
+    else if(dt===today){}                                   // oggi non è finito: non rompe e non consuma
+    else if(run>0 && bank>0){ bank--; used.push(dt); }
+    else run = 0;
+    best = Math.max(best, run);
+  }
+  return {streak:run, best, bank, used};
+}
+
+if(typeof module!=='undefined') module.exports = {minsOf, streakOf, EP_LEN, advanceEp, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};

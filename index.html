@@ -38,7 +38,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--f-body);height:100
 .pager{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
 .pager::-webkit-scrollbar{display:none}
 .view{flex:0 0 100%;min-width:0;overflow-y:auto;scroll-snap-align:start;scroll-snap-stop:always;display:grid;gap:22px;align-content:start;-webkit-overflow-scrolling:touch;
-  padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:calc(110px + env(safe-area-inset-bottom,0px));
+  padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:28px;
   padding-left:max(16px,env(safe-area-inset-left,0px),calc(50% - 340px));padding-right:max(16px,env(safe-area-inset-right,0px),calc(50% - 340px))}
 .view{scrollbar-width:none}
 .view::-webkit-scrollbar{display:none}
@@ -178,6 +178,9 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 @keyframes pop{50%{transform:scale(1.08)}}
 @media (prefers-reduced-motion:reduce){.btn.ok{animation:none}}
 
+#months h3::first-letter{text-transform:uppercase}
+#months > div{display:grid;gap:4px}
+
 /* progressi */
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (min-width:560px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
@@ -214,11 +217,12 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .rules ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:.92rem}
 
 /* barra in basso, avvisi, coriandoli */
-.dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,1fr);padding:5px;border-radius:99px;width:min(380px,calc(100% - 24px));background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);box-shadow:0 8px 28px color-mix(in srgb,var(--fg) 18%,transparent);z-index:20;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.tabbar{flex:none;background:var(--surface);border-top:1px solid var(--line);padding:6px max(12px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.dock{position:relative;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding:5px;border-radius:99px;width:min(440px,100%);background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
 .dock i{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 10px)/4);border-radius:99px;background:var(--fg);will-change:transform}
 .dock a{position:relative;padding:10px 0;text-align:center;text-decoration:none;color:var(--muted);font-weight:700;font-size:.9rem;white-space:nowrap;transition:color .15s}
 .dock a[aria-current=page]{color:var(--bg)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);border-radius:12px;padding:10px 14px;font-weight:700;font-size:.92rem;z-index:30;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(72px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);border-radius:12px;padding:10px 14px;font-weight:700;font-size:.92rem;z-index:30;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px)}
 .toast button{border:0;background:transparent;color:inherit;text-decoration:underline;font-weight:700;padding:0}
 #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:25}
 @media (prefers-reduced-motion:reduce){.bar i,.seg{transition:none}}
@@ -257,6 +261,11 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
     </section>
 
     <a class="revlink" id="revlink" href="#parole" hidden><span id="revtext"></span><span>Apri</span></a>
+
+    <form class="row" id="qform" aria-label="Parola al volo">
+      <input type="text" id="q-word" placeholder="Parola sentita adesso" autocomplete="off" autocapitalize="off" aria-label="Parola al volo">
+      <button type="submit" class="btn solid" id="q-save">+ Parola</button>
+    </form>
 
     <section aria-labelledby="h-week" style="display:grid;gap:10px">
       <h2 id="h-week">Che settimana è</h2>
@@ -338,6 +347,8 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <div class="stat"><b id="s-perfect">0</b><span>giorni a obiettivo</span></div>
     </section>
 
+    <p class="hint" id="jolly"></p>
+
     <section class="card" aria-labelledby="h-wk">
       <h2 id="h-wk">Questa settimana</h2>
       <div class="week" id="week"></div>
@@ -348,6 +359,11 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <h2 id="h-heat">Ultime 5 settimane</h2>
       <div class="heat" id="heat"></div>
       <div class="legend"><span><i class="h1" style="background:color-mix(in srgb,var(--ok) 30%,var(--surface2))"></i>qualcosa</span><span><i style="background:color-mix(in srgb,var(--ok) 65%,var(--surface2))"></i>minimo (15′ per tipo)</span><span><i style="background:var(--ok)"></i>obiettivo</span></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-month">
+      <h2 id="h-month">Mese per mese</h2>
+      <div id="months" style="display:grid;gap:14px"></div>
     </section>
 
     <section aria-labelledby="h-badges" style="display:grid;gap:10px">
@@ -503,9 +519,9 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
   </section>
 </div>
 
-<nav class="dock" aria-label="Sezioni">
+<div class="tabbar"><nav class="dock" aria-label="Sezioni">
   <i aria-hidden="true"></i><a href="#oggi" aria-current="page">Oggi</a><a href="#parole">Parole</a><a href="#progressi">Progressi</a><a href="#guida">Guida</a>
-</nav>
+</nav></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="shared.js"></script>
@@ -890,6 +906,13 @@ $('wform').onsubmit = e => {
   const b = $('w-save'); b.textContent = '✓ '+(edited ? 'Aggiornata' : 'Aggiunta'); b.classList.add('ok');
   setTimeout(() => { b.classList.remove('ok'); if(!editId) b.textContent = 'Aggiungi parola'; }, 1300);
 };
+// la traduzione si aggiunge dopo, dalla vista Parole; la provenienza è il podcast in corso
+$('qform').onsubmit = e => {
+  e.preventDefault(); const w = $('q-word').value.trim(), b = $('q-save'); if(!w) return $('q-word').focus();
+  saveState({words: wordsOf().slice(-499).concat({id: Date.now().toString(36), w, t:'', src: (state && state.tec && state.tec.topic) || '', date: TODAY, got:false})}, 'parola al volo: '+w);
+  $('q-word').value = ''; if(document.activeElement) document.activeElement.blur();
+  b.textContent = '✓ Aggiunta'; b.classList.add('ok'); setTimeout(() => { b.classList.remove('ok'); b.textContent = '+ Parola'; }, 1300);
+};
 $('w-q').oninput = renderWords;
 $('w-hide').onclick = () => { hideTr = !hideTr; ls.set('hideTr', hideTr ? '1' : '0'); renderWords(); };
 
@@ -904,13 +927,11 @@ function stats(){
     if(K.every(k => v[k]>=g)) perfect++;
     if(K.every(k => v[k]>=MIN)){ run = prev && daysBetween(prev,dt)===1 ? run+1 : 1; prev = dt; best = Math.max(best, run); }
   });
-  let streak = 0; const d = new Date();
-  if(!okDay(ymd(d))) d.setDate(d.getDate()-1);        // oggi non rompe la serie finché non è finito
-  while(okDay(ymd(d))){ streak++; d.setDate(d.getDate()-1); }
+  const sk = streakOf(days, TODAY), streak = sk.streak; best = sk.best;
   const hours = total/60;
   let li = 0; LEVELS.forEach((l,i) => { if(hours>=l[0]) li = i; });
   const ws = wordsOf();
-  return {total, hours, perfect, best, streak, li, words: ws.length, learned: ws.filter(w => w.got || w.ivl>=21).length, revs: ((state && state.revDays) || []).length, passes: ((state && state.history) || []).length};
+  return {total, hours, perfect, best, streak, bank: sk.bank, used: sk.used, li, words: ws.length, learned: ws.filter(w => w.got || w.ivl>=21).length, revs: ((state && state.revDays) || []).length, passes: ((state && state.history) || []).length};
 }
 function renderProgress(){
   const s = stats(), lv = LEVELS[s.li], nx = LEVELS[s.li+1];
@@ -921,6 +942,7 @@ function renderProgress(){
   $('lvl-next').textContent = nx ? hh(s.hours)+' / '+nx[0]+' h · poi '+nx[1] : hh(s.hours)+' h';
   $('lvl-bar').style.width = (nx ? Math.min(100,(s.hours-lv[0])/(nx[0]-lv[0])*100) : 100)+'%';
   $('s-streak').textContent = s.streak; $('s-best').textContent = s.best; $('s-hours').textContent = hh(s.hours); $('s-perfect').textContent = s.perfect;
+  $('jolly').textContent = 'Jolly disponibili: '+s.bank+'. Ne arriva uno ogni mese e si accumulano: se salti un giorno ne parte uno da solo e la serie non si rompe.'+(s.used.length ? ' Usati: '+s.used.map(fmtDay).join(', ')+'.' : '');
 
   // settimana in corso
   const wk = $('week'); wk.textContent = '';
@@ -962,6 +984,17 @@ function renderProgress(){
   const bg = $('badges'); bg.textContent = '';
   B.forEach(b => bg.append(el('div',{class:'badge'+(b[2]?' got':'')}, el('b',{}, b[0]), el('span',{}, b[1]))));
 
+  // mese per mese: ore per tipo, giorni col minimo, parole e spezzoni chiusi
+  const mm = {}, hm = n => Math.floor(n/60)+' h '+pad(n%60)+'′';
+  Object.keys(days).forEach(dt => { const v = norm(days[dt]), m = mm[dt.slice(0,7)] = mm[dt.slice(0,7)] || {sem:0, quo:0, tec:0, ok:0}; K.forEach(k => { m[k] += v[k]; }); if(K.every(k => v[k]>=MIN)) m.ok++; });
+  const mb = $('months'); mb.textContent = '';
+  if(!Object.keys(mm).length) mb.append(el('p',{class:'hint'}, 'Qui compare il riepilogo di ogni mese, dal primo giorno segnato.'));
+  Object.keys(mm).sort().reverse().slice(0,6).forEach(k => {
+    const m = mm[k], nw = wordsOf().filter(w => (w.date || '').startsWith(k)).length, np = ((state && state.history) || []).filter(h => (h.to || '').startsWith(k)).length;
+    mb.append(el('div',{}, el('h3',{}, new Date(k+'-15T12:00').toLocaleDateString('it-IT',{month:'long', year:'numeric'})),
+      el('p',{class:'mono', style:'display:flex;flex-wrap:wrap;gap:2px 14px'}, ...K.map(x => el('span',{style:'color:var(--'+x+');white-space:nowrap'}, NAMES[x].slice(0,3)+' '+hm(m[x])))),
+      el('p',{class:'hint'}, 'Totale '+hm(sum(m))+' · '+m.ok+' giorni col minimo · '+nw+' parole · '+np+' spezzoni chiusi')));
+  });
   const hist = ((state && state.history) || []).slice(-10).reverse(), hb = $('hist'); hb.textContent = '';
   if(!hist.length) hb.append(el('p',{class:'empty'}, 'Ancora nessuno. Quando capisci l’80% di Peppa Pig o del podcast, chiudilo dalla vista Oggi e lo trovi qui.'));
   else { const ul = el('ul',{class:'words'}); hist.forEach(h => ul.append(el('li',{class:'word t-'+h.type}, el('div',{class:'main'}, el('span',{class:'tag'}, NAMES[h.type]||''), el('b',{}, h.label)), el('div',{class:'meta'}, el('span',{}, (daysBetween(h.from,h.to)||1)+' giorni · chiuso il '+fmtDay(h.to)))))); hb.append(ul); }
