@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
+<script>try{var t=localStorage.getItem("tema");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Protocollo Inglese</title>
@@ -38,7 +39,7 @@ body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--f-body);height:100
 .pager{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
 .pager::-webkit-scrollbar{display:none}
 .view{flex:0 0 100%;min-width:0;overflow-y:auto;scroll-snap-align:start;scroll-snap-stop:always;display:grid;gap:22px;align-content:start;-webkit-overflow-scrolling:touch;
-  padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:28px;
+  padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:92px;
   padding-left:max(16px,env(safe-area-inset-left,0px),calc(50% - 340px));padding-right:max(16px,env(safe-area-inset-right,0px),calc(50% - 340px))}
 .view{scrollbar-width:none}
 .view::-webkit-scrollbar{display:none}
@@ -117,9 +118,6 @@ input[type=text],input[type=search],input[type=password]{font:inherit;font-size:
 .chips button{border:1px solid var(--line);background:transparent;border-radius:99px;padding:5px 11px;font-size:.85rem;color:var(--muted)}
 .chips button[aria-pressed=true]{background:var(--fg);border-color:var(--fg);color:var(--bg);font-weight:700}
 .comp{display:grid;gap:6px}
-.bars{display:flex;align-items:flex-end;gap:3px;height:34px;border-bottom:1px solid var(--line);background:linear-gradient(to top,transparent 80%,var(--line) 80%,var(--line) calc(80% + 1px),transparent calc(80% + 1px))}
-.bars i{flex:1;max-width:18px;background:var(--accent);border-radius:3px 3px 0 0;opacity:.55}
-.bars i.ok{opacity:1}
 .next-form{display:grid;gap:8px}
 
 /* scaletta */
@@ -249,6 +247,99 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .toast button{border:0;background:transparent;color:inherit;text-decoration:underline;font-weight:700;padding:0}
 #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:25}
 @media (prefers-reduced-motion:reduce){.bar i,.seg{transition:none}}
+
+/* ===== Oggi: restyling del 12/11 (stessi colori e caratteri; ordine, ritmo e gerarchia) ===== */
+:root{--r-s:10px;--r-m:14px;--r-l:20px;--sh:0 1px 2px rgb(0 0 0/.06),0 12px 28px -16px rgb(0 0 0/.3)}
+#v-oggi{gap:16px}
+#v-oggi .head{align-items:flex-end;gap:10px 12px}
+#v-oggi h1{font-size:2rem;letter-spacing:-.025em;line-height:1.05;margin-top:3px}
+#v-oggi .eyebrow{letter-spacing:.1em}
+#v-oggi .sec{display:grid;gap:10px}
+#v-oggi h2{font-size:1.12rem;letter-spacing:-.01em}
+#v-oggi h3{font-size:.95rem}
+.pill{background:color-mix(in srgb,var(--surface) 80%,transparent)}
+.hero{border-radius:var(--r-l);padding:18px 16px 16px;gap:14px;box-shadow:var(--sh);background:linear-gradient(160deg,color-mix(in srgb,var(--sem) 9%,var(--surface)),var(--surface) 60%)}
+.hero .kind{font-size:1.3rem;letter-spacing:-.01em;margin-top:2px}
+.hero .total{font-size:2.4rem;letter-spacing:-.03em}
+.hero .total small{font-size:1.05rem}
+.hero .bar{height:10px}
+.next-up{margin:0;display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:var(--r-m);background:color-mix(in srgb,var(--fg) 6%,transparent);font-weight:700;font-size:.95rem;line-height:1.3}
+.next-up::before{content:"";flex:none;width:9px;height:9px;border-radius:99px;background:var(--dot,var(--gold));box-shadow:0 0 0 4px color-mix(in srgb,var(--dot,var(--gold)) 24%,transparent)}
+.next-up.done::before{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 22%,transparent)}
+.hero .mixer{gap:8px}
+.hero .ch{border-radius:var(--r-m);padding:12px 6px 10px}
+.hero .ch-name{font-size:.7rem;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.hero .meter{gap:3px}
+.hero .seg{height:11px;border-radius:4px}
+.hero .ch-val{font-size:1.4rem}
+.hero .ch .add{border-radius:var(--r-s);padding:11px 0;box-shadow:0 8px 16px -10px var(--accent)}
+.how{background:none;border:0;padding:0}
+.how>summary{list-style:none;padding:2px 0;font-weight:700;font-size:.85rem;color:var(--muted)}
+.how>summary::-webkit-details-marker{display:none}
+.how>summary::after{content:" ›"}
+.how[open]>summary{border:0;margin:0 0 6px}
+.how>div{padding-bottom:0;gap:6px}
+#v-oggi .track{border-radius:var(--r-l);padding:14px 16px;gap:10px;box-shadow:var(--sh);border-left:4px solid var(--accent)}
+.track .left{font-size:.78rem;font-weight:700;padding:3px 9px;border-radius:99px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.track .left.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 16%,transparent)}
+#v-oggi .track .top{align-items:center}
+#v-oggi .tag{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;letter-spacing:.08em}
+#v-oggi .lab{font-family:var(--f-display);font-weight:800;font-size:1.1rem;line-height:1.2;letter-spacing:-.01em}
+.chips.scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:99px;overflow:hidden;background:var(--bg)}
+.chips.scale.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.chips.scale button{border:0;border-radius:0;padding:8px 0;font-size:.82rem;font-weight:700;color:var(--muted);border-right:1px solid var(--line)}
+.chips.scale button:last-child{border-right:0}
+.chips.scale button[aria-pressed=true]{background:var(--accent);color:var(--on)}
+#v-oggi .revlink,#v-oggi #report{border-radius:var(--r-l)}
+.fold{border-radius:var(--r-l);padding:0 16px}
+.fold>summary{display:flex;align-items:center;gap:10px;list-style:none;padding:15px 0;font-family:var(--f-display);font-weight:800;font-size:1.02rem}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::after{content:"";flex:none;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-3px 2px 0 auto;transition:transform .2s}
+.fold[open]>summary::after{transform:rotate(-135deg);margin:4px 2px 0 auto}
+.fold[open]>summary{border-bottom:1px solid var(--line);margin-bottom:12px}
+.fold>summary>span:first-child{white-space:nowrap}
+.fold .sum{flex:1 1 auto;font-family:var(--f-body);font-weight:400;font-size:.84rem;color:var(--muted);text-align:right}
+.foldbody{display:grid;gap:10px;padding-bottom:16px}
+.foldbody .plan .step{padding:10px 0}
+@media (prefers-reduced-motion:reduce){.fold>summary::after{transition:none}}
+/* pulsante + e parola al volo */
+.fab{position:fixed;z-index:40;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(78px + max(2px,calc(env(safe-area-inset-bottom,0px) - 18px)));width:46px;height:46px;border-radius:99px;border:0;padding:0;display:grid;place-items:center;background:var(--fg);color:var(--bg);box-shadow:0 12px 26px -10px rgb(0 0 0/.5);transition:transform .15s}
+.fab:active{transform:scale(.93)}
+.fab svg{width:22px;height:22px}
+.sheet{position:fixed;inset:0;z-index:55;background:rgb(0 0 0/.5);display:flex;align-items:flex-end;justify-content:center}
+.sheetbox{width:100%;max-width:560px;display:grid;gap:12px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:var(--r-l) var(--r-l) 0 0}
+.sheethead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet .x{flex:none;width:36px;height:36px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:1.2rem;line-height:1}
+.sheet input{border-radius:var(--r-m);padding:13px 14px}
+.sheet .btn.solid{padding:13px;border-radius:var(--r-m);font-size:1rem}
+@media (prefers-reduced-motion:no-preference){.sheetbox{animation:sheetup .22s ease-out}@keyframes sheetup{from{transform:translateY(28px);opacity:0}}}
+
+
+/* ===== Ritocchi del 12/11: stessa lingua in tutte le viste, stati, movimento ===== */
+.card{border-radius:var(--r-l);box-shadow:var(--sh)}
+.word,.stat,.badge,.pod,details{border-radius:var(--r-m)}
+.fold{border-radius:var(--r-l)}
+.view h2{font-size:1.12rem;letter-spacing:-.01em}
+.view h3{font-size:.95rem}
+.banner{display:flex;align-items:center;gap:10px;border-radius:var(--r-l);padding:12px 14px;font-weight:700;line-height:1.3}
+.banner::before{content:"!";flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:99px;background:var(--warn);color:var(--on);font-size:.8rem}
+.banner::after{content:"›";margin-left:auto;color:var(--muted);font-size:1.2rem}
+.hero .mixer{border-top:1px solid var(--line);padding-top:14px}
+.hero.done{border-color:color-mix(in srgb,var(--ok) 55%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--ok) 14%,var(--surface)),var(--surface) 65%)}
+.next-up.done{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+#v-oggi .track{border-left:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface) 55%)}
+#v-oggi .tag::before{content:"";width:8px;height:8px;border-radius:99px;background:var(--accent)}
+#report{display:grid;gap:2px;padding:12px 16px}
+.rtitle{display:flex;justify-content:space-between;align-items:center;font-family:var(--f-display);font-weight:800;font-size:1.08rem}
+.rtitle .chev{color:var(--muted);font-size:1.3rem}
+.dock a.dot::after{content:"";display:inline-block;width:6px;height:6px;border-radius:99px;background:var(--gold);margin-left:5px;vertical-align:middle}
+@media (prefers-reduced-motion:no-preference){
+  .ch-val.bump{animation:tick .3s ease-out}
+  @keyframes tick{40%{transform:scale(1.18)}}
+  .fold[open]>.foldbody{animation:foldin .22s ease-out}
+  @keyframes foldin{from{opacity:0;transform:translateY(-6px)}}
+  .hero .bar i{transition:width .5s cubic-bezier(.2,.8,.2,1)}
+}
 </style>
 </head>
 <body>
@@ -268,7 +359,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
   </header>
     <button type="button" class="banner" id="nosave" hidden></button>
         <section class="card" id="report" aria-label="Report del mattino" hidden></section>
-    <section class="card" aria-labelledby="h-goal">
+    <section class="card hero" aria-labelledby="h-goal">
       <div class="goalrow">
         <div>
           <div class="eyebrow" id="h-goal">Obiettivo di oggi</div>
@@ -277,48 +368,54 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
         <div class="total"><span id="mins">0</span><small id="goalmins"> / 90′</small></div>
       </div>
       <div class="bar" aria-hidden="true"><i id="b-sem" style="background:var(--sem)"></i><i id="b-quo" style="background:var(--quo)"></i><i id="b-tec" style="background:var(--tec)"></i></div>
-      <p class="hint" id="goaltext"></p>
+      <p class="next-up" id="status" aria-live="polite"></p>
       <div class="mixer" id="mixer"></div>
-      <p class="status" id="status" aria-live="polite"></p>
-      <p class="hint">Ogni tacca vale 5′. Tocca +5′ oppure direttamente la tacca a cui sei arrivato. La linea tratteggiata è l’obiettivo.</p>
+      <details class="how">
+        <summary>Come funziona</summary>
+        <div>
+          <p class="hint" id="goaltext"></p>
+          <p class="hint">Ogni tacca vale 5′. Tocca +5′ oppure direttamente la tacca a cui sei arrivato. La linea tratteggiata è l’obiettivo.</p>
+        </div>
+      </details>
+    </section>
+
+    <section aria-labelledby="h-now" class="sec">
+      <h2 id="h-now">Cosa metti su oggi</h2>
+      <div class="plist" id="now"></div>
     </section>
 
     <a class="revlink" id="revlink" href="#parole" hidden><span id="revtext"></span><span>Apri</span></a>
 
-    <form class="row" id="qform" aria-label="Parola al volo">
-      <input type="text" id="q-word" placeholder="Parola sentita adesso" autocomplete="off" autocapitalize="off" aria-label="Parola al volo">
-      <button type="submit" class="btn solid" id="q-save">+ Parola</button>
-    </form>
+    <details class="fold" id="setup">
+      <summary><span>Settimana e turno</span><span class="sum" id="setupsum"></span></summary>
+      <div class="foldbody">
+        <h3 id="h-week">Che settimana è</h3>
+        <div class="chips" id="weektypes" role="group" aria-label="Tipo di settimana"></div>
+        <p class="hint" id="weekhint"></p>
+        <h3 id="h-shift">Che turno fai</h3>
+        <div class="chips" id="shifts" role="group" aria-label="Orario del turno"></div>
+        <p class="hint">Tocca di nuovo un turno scelto per toglierlo.</p>
+      </div>
+    </details>
 
-    <section aria-labelledby="h-week" style="display:grid;gap:10px">
-      <h2 id="h-week">Che settimana è</h2>
-      <div class="chips" id="weektypes" role="group" aria-label="Tipo di settimana"></div>
-      <p class="hint" id="weekhint"></p>
-      <h2 id="h-shift">Che turno fai</h2>
-      <div class="chips" id="shifts" role="group" aria-label="Orario del turno"></div>
-      <p class="hint">Tocca di nuovo un turno scelto per toglierlo.</p>
-    </section>
+    <details class="fold">
+      <summary><span id="h-pods">Prossimi podcast</span></summary>
+      <div class="foldbody">
+        <ol class="pods" id="pods"></ol>
+        <p class="hint" id="podsnote"></p>
+      </div>
+    </details>
 
-    <section aria-labelledby="h-now" style="display:grid;gap:10px">
-      <h2 id="h-now">Cosa metti su oggi</h2>
-      <div class="plist" id="now"></div>
-      <p class="hint" id="recent"></p>
-    </section>
-
-    <section aria-labelledby="h-pods" style="display:grid;gap:10px">
-      <h2 id="h-pods">Prossimi podcast</h2>
-      <ol class="pods" id="pods"></ol>
-      <p class="hint" id="podsnote"></p>
-    </section>
-
-    <section aria-labelledby="h-plan" style="display:grid;gap:10px">
-      <h2 id="h-plan">Scaletta di oggi</h2>
-      <div class="card"><div class="plan" id="plan"></div></div>
-      <details>
-        <summary>Tutta la settimana</summary>
-        <div><div class="tbl" id="weektable"></div></div>
-      </details>
-    </section>
+    <details class="fold">
+      <summary><span id="h-plan">Scaletta di oggi</span></summary>
+      <div class="foldbody">
+        <div class="plan" id="plan"></div>
+        <details class="how">
+          <summary>Tutta la settimana</summary>
+          <div><div class="tbl" id="weektable"></div></div>
+        </details>
+      </div>
+    </details>
   </section>
 
   <!-- PAROLE -->
@@ -415,7 +512,13 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       </div>
       <p class="hint">Su iPhone la notifica funziona solo dall’app aggiunta alla schermata Home: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
     </section>
-    <details>
+    <section class="card" aria-labelledby="h-theme">
+      <h2 id="h-theme">Aspetto</h2>
+      <div class="chips scale three" id="themes" role="group" aria-label="Tema dei colori" style="--accent:var(--fg)"></div>
+      <p class="hint">Automatico segue le impostazioni del telefono. Con Chiaro o Scuro l’app resta sempre così.</p>
+    </section>
+
+    <details class="fold">
       <summary>Cronologia</summary>
       <div><p class="hint">Le ultime azioni fatte nell’app, dalla più recente.</p><ul id="loglist"></ul></div>
     </details>
@@ -427,7 +530,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
         <div class="card"><h3 style="color:var(--ok)">Mentre ascolti puoi</h3><ul><li>guidare (solo audio)</li><li>fare il turno di sorveglianza</li><li>allenarti</li><li>fare lavori manuali</li></ul></div>
         <div class="card"><h3 style="color:var(--warn)">Mentre ascolti non puoi</h3><ul><li>leggere, nemmeno i sottotitoli</li><li>parlare con qualcuno</li><li>fare chiamate o lavoro di testa</li><li>dormire</li></ul></div>
       </div>
-      <details>
+      <details class="fold">
         <summary>Fase 2 · quando iniziare a parlare</summary>
         <div>
           <p>Il periodo silente non si forza. Quando ti accorgi che:</p>
@@ -439,7 +542,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 
     <section style="display:grid;gap:10px" aria-labelledby="h-mat">
       <h2 id="h-mat">Materiale</h2>
-      <details>
+      <details class="fold">
         <summary style="color:var(--sem)">Semplificato · cartoni prescolari</summary>
         <div>
           <p><span class="loc">Lavoro</span><b>Peppa Pig</b> su Prime Video. Gli episodi durano ~5′, quindi uno spezzone sono 3 episodi.</p>
@@ -447,7 +550,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
           <p class="hint">La prima volta guardalo, così hai gli aiuti visivi. Dopo puoi anche solo ascoltarlo. Paola ha tenuto lo stesso episodio per 8 mesi: non avere fretta.</p>
         </div>
       </details>
-      <details>
+      <details class="fold">
         <summary style="color:var(--quo)">Quotidiano · serie TV</summary>
         <div>
           <p><span class="loc">Lavoro</span><b>The Office</b> su Prime Video, a ruota libera: ogni giorno vai avanti e non torni mai indietro. Per dopo, altre serie in ordine, dall’inglese più chiaro al più difficile:</p>
@@ -468,7 +571,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
           <p class="hint">Dark l’ho tolta: l’originale è in tedesco, quindi in inglese senti un doppiaggio.</p>
         </div>
       </details>
-      <details>
+      <details class="fold">
         <summary style="color:var(--tec)">Tecnico · podcast Bloomberg</summary>
         <div>
           <p><span class="loc">Auto</span>Un episodio alla volta, finché non capisci l’80%. Se la tratta finisce prima, riprendi da lì; a fine episodio ricomincia dall’inizio. Quando lo chiudi passi al podcast dopo nella lista e prendi il suo episodio più recente adatto. Finita la lista, ricominci.</p>
@@ -502,7 +605,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
           </ol>
         </div>
       </details>
-      <details>
+      <details class="fold">
         <summary>Uscite Bloomberg · ora italiana</summary>
         <div>
           <div class="tbl"><table>
@@ -542,6 +645,15 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
   </section>
 </div>
 
+<button type="button" class="fab" id="fab" aria-label="Aggiungi una parola sentita adesso"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-t">
+  <form class="sheetbox" id="qform">
+    <div class="sheethead"><h2 id="sheet-t">Parola sentita adesso</h2><button type="button" class="x" id="sheet-x" aria-label="Chiudi">×</button></div>
+    <input type="text" id="q-word" placeholder="es. mortgage" autocomplete="off" autocapitalize="off" aria-label="Parola sentita adesso">
+    <p class="hint">La traduzione la aggiungi dopo, dalla scheda Parole.</p>
+    <button type="submit" class="btn solid" id="q-save">Aggiungi parola</button>
+  </form>
+</div>
 <div class="tabbar"><nav class="dock" aria-label="Sezioni">
   <i aria-hidden="true"></i><a href="#oggi" aria-current="page">Oggi</a><a href="#parole">Parole</a><a href="#progressi">Progressi</a><a href="#guida">Guida</a>
 </nav></div>
@@ -654,7 +766,9 @@ function confetti(){
 }
 
 /* ---------- OGGI ---------- */
+let bumpK = null;
 function setMin(k, v){
+  bumpK = k;
   const before = today(), g = goal();
   const t = Object.assign({}, before, {[k]: Math.max(0, v)});
   days[TODAY] = {date:TODAY, sem:t.sem, quo:t.quo, tec:t.tec, u:'min', g};
@@ -683,10 +797,15 @@ function renderToday(){
     }
     mx.append(el('div',{class:'ch t-'+k+(k===next && !done?' next':'')+(t[k]>=g?' done':'')},
       el('div',{class:'ch-name'}, NAMES[k]), meter,
-      el('div',{class:'ch-val'}, String(t[k]), el('small',{}, '/'+g+'′')),
+      el('div',{class:'ch-val'+(k===bumpK ? ' bump' : '')}, String(t[k]), el('small',{}, '/'+g+'′')),
       el('button',{type:'button', class:'add', 'aria-label':'Aggiungi 5 minuti di '+NAMES[k], onclick:()=>setMin(k, t[k]+STEP)}, '+5′'),
       el('button',{type:'button', class:'sub', disabled: t[k] ? null : '', 'aria-label':'Togli 5 minuti di '+NAMES[k], onclick:()=>setMin(k, t[k]-STEP)}, '−5′')));
   });
+  document.querySelector('.hero').classList.toggle('done', done);
+  $('h-goal').textContent = done ? 'Obiettivo raggiunto' : 'Obiettivo di oggi';
+  bumpK = null;
+  $('status').className = 'next-up'+(done ? ' done' : '');
+  $('status').style.setProperty('--dot', done ? 'var(--ok)' : 'var(--'+next+')');
   $('status').textContent = done ? 'Obiettivo raggiunto. Se continui, tieni i tre tipi in pari.'
     : (low>=MIN && g>MIN ? 'Minimo fatto. ' : '')+'Adesso tocca a '+NAMES[next]+': mancano '+(g-t[next])+'′.';
 }
@@ -699,7 +818,10 @@ function renderPlan(){
   const sh = (state && state.shifts) || {}, tom = addDays(TODAY, 1), sb = $('shifts'); sb.textContent = '';
   // tengo solo oggi e domani, così i turni vecchi non si accumulano
   [[TODAY,'Oggi'],[tom,'Domani']].forEach(([d,l]) => [6,7].forEach(h => sb.append(el('button',{type:'button','aria-pressed':String(sh[d]===h), onclick:()=>saveState({shifts:{[TODAY]:sh[TODAY], [tom]:sh[tom], [d]: sh[d]===h ? null : h}}, 'turno '+l.toLowerCase()+': '+(sh[d]===h ? 'tolto' : h+'-'+(h+8)))}, l+' '+h+'-'+(h+8)))));
-  const h = sh[TODAY], when = h ? {'Andata al lavoro':'Andata al lavoro, prima delle '+h, 'Prime ore del turno':'Prime ore del turno, dalle '+h, 'Dalle 13':'Dalle 13 alle '+(h+8), 'Ritorno a casa':'Ritorno a casa, dopo le '+(h+8)} : {};
+  const h = sh[TODAY];
+  $('setupsum').textContent = (type ? WEEKS[type] : 'da scegliere')+' · '+(h ? 'turno '+h+'-'+(h+8) : 'turno non scelto');
+  if(!type && !h) $('setup').open = true;
+  const when = h ? {'Andata al lavoro':'Andata al lavoro, prima delle '+h, 'Prime ore del turno':'Prime ore del turno, dalle '+h, 'Dalle 13':'Dalle 13 alle '+(h+8), 'Ritorno a casa':'Ritorno a casa, dopo le '+(h+8)} : {};
   todayPlan().rows.forEach(r => plan.append(el('div',{class:'step'}, el('span',{class:'when'}, when[r[0]] || r[0]), el('span',{class:'what'}, r[1]))));
   const names = {1:'Lun',2:'Mar',3:'Mer',4:'Gio',5:'Ven',6:'Sab',0:'Dom'}, wd = new Date().getDay();
   const body = el('tbody');
@@ -719,7 +841,7 @@ function renderNow(){
     const age = k==='quo' ? 'sempre nuovo' : (since===null ? '' : (since===0 ? 'da oggi' : 'da '+since+(since===1?' giorno':' giorni')));
     const left = Math.max(0, p.target - t[k]);
     const card = el('div',{class:'track t-'+k});
-    card.append(el('div',{class:'top'}, el('span',{class:'tag'}, NAMES[k]+(k==='tec' && cur.topic ? ' · '+cur.topic : '')), el('span',{class:'where mono'}, left ? 'ancora '+left+'′' : 'fatto')));
+    card.append(el('div',{class:'top'}, el('span',{class:'tag'}, NAMES[k]+(k==='tec' && cur.topic ? ' · '+cur.topic : '')), el('span',{class:'left mono'+(left ? '' : ' ok')}, left ? 'ancora '+left+'′' : 'fatto ✓')));
     const url = k==='tec' ? (cur.url || 'https://podcasts.apple.com/it/search?term='+encodeURIComponent(cur.label || cur.topic || '')).replace(/^https?:/, 'podcasts:') : 'shortcuts://run-shortcut?name='+encodeURIComponent('Prime Video');     // Comando Rapido che apre l'app Prime Video
     if(editK===k){
       const inp = el('textarea',{rows:'1', id:'cur-'+k, 'aria-label':'Spezzone '+NAMES[k], placeholder: k==='quo' ? 'es. The Office · (~20′)' : 'spezzone in corso'});
@@ -755,18 +877,17 @@ function renderNow(){
     }
     if(k!=='quo'){
       if(cur.label && openNext!==k){
-        // comprensione stimata a ogni riascolto: la curva dice quando si arriva all'80%
+        // comprensione stimata a ogni riascolto: la curva dice quando si arriva all'80%, e da lì si passa al prossimo
         const cp = cur.comp || [], lastP = cp.length && cp[cp.length-1].d===TODAY ? cp[cp.length-1].p : null;
         const setComp = pc => {
           const a = cp.slice(-19); if(a.length && a[a.length-1].d===TODAY) a.pop();
           a.push({d:TODAY, p:pc}); if(pc>=80) openNext = k;
           saveState({[k]: Object.assign({}, cur, {comp:a})}, NAMES[k]+': capito '+pc+'%');
         };
-        const ch = el('div',{class:'chips', role:'group', 'aria-label':'Quanto hai capito'});
+        const ch = el('div',{class:'chips scale', role:'group', 'aria-label':'Quanto hai capito'});
         [20,40,60,80,100].forEach(pc => ch.append(el('button',{type:'button','aria-pressed':String(lastP===pc), onclick:()=>setComp(pc)}, pc+'%')));
         card.append(el('div',{class:'comp'},
-          el('div',{class:'hint'}, cp.length ? 'Capito finora: '+cp.map(c => c.p+'%').join(' → ') : 'Quanto hai capito all’ultimo ascolto?'),
-          cp.length ? el('div',{class:'bars','aria-hidden':'true'}, ...cp.map(c => el('i',{class: c.p>=80 ? 'ok' : null, style:'height:'+c.p+'%'}))) : null,
+          el('div',{class:'hint'}, cp.length ? 'Quanto hai capito. Finora: '+cp.map(c => c.p+'%').join(' → ') : 'Quanto hai capito all’ultimo ascolto?'),
           ch));
       }
       if(openNext===k){
@@ -783,14 +904,11 @@ function renderNow(){
         }}, el('span',{class:'hint'}, 'Hai capito l’80% di “'+(cur.label||'questo spezzone')+'”. '+(k==='tec' ? 'Tocca a '+nextTopic(cur.topic)+': scrivi quale episodio prendi.' : 'Con cosa vai avanti?')), nin,
           el('div',{class:'row'}, el('button',{type:'submit', class:'btn solid'}, 'Passo a questo'), el('button',{type:'button', class:'ghost', onclick:()=>{ openNext = null; renderNow(); }}, 'Annulla'))));
         setTimeout(() => nin.focus(), 0);
-      } else card.append(el('div',{class:'row'}, el('button',{type:'button', class:'btn', onclick:()=>{ openNext = k; renderNow(); }}, 'Capisco l’80%, cambio'),
-        ));
+      }
     }
     box.append(card);
   }
-  const done = (state.history||[]).slice(-3).reverse();
   box.querySelectorAll('textarea').forEach(fit);
-  $('recent').textContent = done.length ? 'Chiusi di recente: '+done.map(h => h.label+' ('+(daysBetween(h.from,h.to)||1)+' gg)').join(' · ') : '';
 }
 
 /* ---------- PROSSIMI PODCAST (titoli scritti nel db da fuori: feed/latest) ---------- */
@@ -799,8 +917,11 @@ const pickEp = name => pickEpIn(feed, name);
 function renderReport(){
   const box = $('report'), on = report && report.date===TODAY; box.hidden = !on; box.textContent = '';
   if(!on) return;
-  box.onclick = openPiano;
-  box.append(el('div',{class:'eyebrow'}, 'Report del mattino · tocca per il piano'));
+  box.onclick = openPiano; box.setAttribute('role','button'); box.tabIndex = 0;
+  box.onkeydown = e => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openPiano(); } };
+  const p = state ? todayPlan() : null, sh = state && state.shifts && state.shifts[TODAY];
+  box.append(el('div',{class:'eyebrow'}, 'Report del mattino'),
+    el('div',{class:'rtitle'}, el('span',{}, p ? p.kind+(sh ? ' '+sh+'-'+(sh+8) : '')+' · '+p.target*3+'′' : 'Tocca per il piano'), el('span',{class:'chev','aria-hidden':'true'}, '›')));
 }
 /* ---------- PIANO DI OGGI (si apre toccando la notifica o il report) ---------- */
 function openPiano(){
@@ -888,6 +1009,7 @@ function renderQuiz(){
   const ws = wordsOf(), due = dueWords(), noTr = ws.filter(w => !w.t && !w.got).length;
   const doneToday = ((state && state.revDays) || []).includes(TODAY);
   $('revlink').hidden = !due.length;
+  document.querySelector('.dock a[href="#parole"]').classList.toggle('dot', due.length>0);
   $('revtext').textContent = due.length ? 'Ripasso parole: '+due.length+(due.length===1?' carta':' carte')+' da fare' : '';
   box.append(el('div',{class:'eyebrow'}, 'Ripasso di oggi'));
   if(quiz && !ws.some(x => x.id===quiz.queue[0])){ quiz.queue.shift(); if(!quiz.queue.length) quiz = null; return renderQuiz(); }
@@ -990,11 +1112,16 @@ $('wform').onsubmit = e => {
   setTimeout(() => { b.classList.remove('ok'); if(!editId) b.textContent = 'Aggiungi parola'; }, 1300);
 };
 // la traduzione si aggiunge dopo, dalla vista Parole; la provenienza è il podcast in corso
+const sheet = $('sheet');
+const openSheet = () => { sheet.hidden = false; $('q-word').focus(); };
+const closeSheet = () => { sheet.hidden = true; $('q-word').value = ''; if(document.activeElement) document.activeElement.blur(); };
+$('fab').onclick = openSheet; $('sheet-x').onclick = closeSheet;
+sheet.onclick = e => { if(e.target===sheet) closeSheet(); };
+document.addEventListener('keydown', e => { if(e.key==='Escape' && !sheet.hidden) closeSheet(); });
 $('qform').onsubmit = e => {
-  e.preventDefault(); const w = $('q-word').value.trim(), b = $('q-save'); if(!w) return $('q-word').focus();
+  e.preventDefault(); const w = $('q-word').value.trim(); if(!w) return $('q-word').focus();
   saveState({words: wordsOf().slice(-499).concat({id: Date.now().toString(36), w, t:'', src: (state && state.tec && state.tec.topic) || '', date: TODAY, got:false})}, 'parola al volo: '+w);
-  $('q-word').value = ''; if(document.activeElement) document.activeElement.blur();
-  b.textContent = '✓ Aggiunta'; b.classList.add('ok'); setTimeout(() => { b.classList.remove('ok'); b.textContent = '+ Parola'; }, 1300);
+  closeSheet(); toast('Parola aggiunta: '+w);
 };
 $('w-q').oninput = renderWords;
 $('w-hide').onclick = () => { hideTr = !hideTr; ls.set('hideTr', hideTr ? '1' : '0'); renderWords(); };
@@ -1120,6 +1247,18 @@ addEventListener('resize', () => go(curView, false));
 
 /* ---------- collegamento e notifiche ---------- */
 $('nosave').onclick = () => go('guida');
+/* ---------- TEMA ---------- */
+function applyTheme(t){
+  const r = document.documentElement, forced = t==='light' || t==='dark';
+  if(forced) r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
+  const m = document.querySelectorAll('meta[name="theme-color"]'), col = {light:'#f1f3f8', dark:'#0c1117'};
+  if(m.length===2){ m[0].content = forced ? col[t] : col.light; m[1].content = forced ? col[t] : col.dark; }
+}
+function renderThemes(){
+  const cur = ls.get('tema') || 'auto', box = $('themes'); box.textContent = '';
+  [['auto','Automatico'],['light','Chiaro'],['dark','Scuro']].forEach(([k,l]) => box.append(el('button',{type:'button','aria-pressed':String(cur===k), onclick:() => { ls.set('tema', k); applyTheme(k); renderThemes(); }}, l)));
+}
+applyTheme(ls.get('tema') || 'auto'); renderThemes();
 $('syncbtn').onclick = () => { sync(); toast('Aggiorno…'); };
 $('tokform').onsubmit = e => {
   e.preventDefault(); const v = $('tok').value.trim(); if(!v) return $('tok').focus();
