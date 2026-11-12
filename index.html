@@ -332,6 +332,8 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .sheet{position:fixed;inset:0;z-index:55;background:rgb(0 0 0/.5);display:flex;align-items:flex-end;justify-content:center}
 .sheetbox{width:100%;max-width:560px;display:grid;gap:12px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:var(--r-l) var(--r-l) 0 0}
 .sheethead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet.kb{padding:0 8px 8px}
+.sheet.kb .sheetbox{border-radius:var(--r-l);border-bottom:1px solid var(--line);padding-bottom:16px}
 .sheet .x{flex:none;width:36px;height:36px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:1.2rem;line-height:1}
 .sheet input{border-radius:var(--r-m);padding:13px 14px}
 .sheet .btn.solid{padding:13px;border-radius:var(--r-m);font-size:1rem}
@@ -933,9 +935,9 @@ function renderNow(){
           saveState({[k]: Object.assign({}, cur, {comp:a})}, NAMES[k]+(off ? ': stima tolta' : ': capito '+pc+'%'));
         };
         const ch = el('div',{class:'chips scale', role:'group', 'aria-label':'Quanto hai capito'});
-        [20,40,60,80,100].forEach(pc => ch.append(el('button',{type:'button','aria-pressed':String(lastP===pc), onclick:()=>setComp(pc)}, pc+'%')));
+        [20,40,60,80,100].forEach(pc => ch.append(el('button',{type:'button','aria-pressed':String(lastP===pc), title: lastP===pc ? 'Tocca di nuovo per togliere' : null, onclick:()=>setComp(pc)}, pc+'%')));
         card.append(el('div',{class:'comp'},
-          el('div',{class:'hint'}, 'Quanto hai capito?'+(cp.length ? ' Finora: '+cp.map(c => c.p+'%').join(' → ') : '')+(lastP!==null ? ' · tocca di nuovo per togliere' : '')),
+          el('div',{class:'hint'}, 'Quanto hai capito?'),
           ch));
       }
       if(openNext===k){
@@ -1168,10 +1170,15 @@ $('wform').onsubmit = e => {
 // la traduzione si aggiunge dopo, dalla vista Parole; la provenienza è il podcast in corso
 const sheet = $('sheet'), vv = window.visualViewport;
 // Su iPhone la tastiera copre il fondo della pagina senza ridimensionarla: il foglio segue l'area davvero visibile, così sta sopra la tastiera.
-const fitSheet = () => { if(!vv || sheet.hidden) return; sheet.style.top = vv.offsetTop+'px'; sheet.style.height = vv.height+'px'; };
+const fitSheet = () => {
+  if(!vv) return;
+  if(sheet.hidden){ if(window.scrollY || vv.offsetTop) window.scrollTo(0, 0); return; }          // iOS lascia la pagina spostata dopo la tastiera
+  sheet.style.top = vv.offsetTop+'px'; sheet.style.height = vv.height+'px';
+  sheet.classList.toggle('kb', vv.height < window.innerHeight - 120);                           // tastiera aperta: scheda staccata dal fondo, tutta visibile
+};
 if(vv){ vv.addEventListener('resize', fitSheet); vv.addEventListener('scroll', fitSheet); }
 const openSheet = () => { sheet.hidden = false; fitSheet(); $('q-word').focus(); [100, 350, 700].forEach(t => setTimeout(fitSheet, t)); };
-const closeSheet = () => { sheet.hidden = true; sheet.style.top = ''; sheet.style.height = ''; $('q-word').value = ''; if(document.activeElement) document.activeElement.blur(); };
+const closeSheet = () => { sheet.hidden = true; sheet.classList.remove('kb'); sheet.style.top = ''; sheet.style.height = ''; $('q-word').value = ''; if(document.activeElement) document.activeElement.blur(); [0, 80, 350].forEach(t => setTimeout(() => window.scrollTo(0, 0), t)); };
 $('fab').onclick = openSheet; $('sheet-x').onclick = closeSheet;
 sheet.onclick = e => { if(e.target===sheet) closeSheet(); };
 document.addEventListener('keydown', e => { if(e.key==='Escape' && !sheet.hidden) closeSheet(); });
@@ -1317,7 +1324,7 @@ function renderProgress(){
   });
   const hist = ((state && state.history) || []).slice(-10).reverse(), hb = $('hist'); hb.textContent = '';
   if(!hist.length) hb.append(el('p',{class:'empty'}, 'Ancora nessuno. Quando capisci l’80% di Peppa Pig o del podcast, chiudilo dalla vista Oggi e lo trovi qui.'));
-  else { const ul = el('ul',{class:'words'}); hist.forEach(h => ul.append(el('li',{class:'word t-'+h.type}, el('div',{class:'main'}, el('span',{class:'tag'}, NAMES[h.type]||''), el('b',{}, h.label)), el('div',{class:'meta'}, el('span',{}, (daysBetween(h.from,h.to)||1)+' giorni · chiuso il '+fmtDay(h.to)))))); hb.append(ul); }
+  else { const ul = el('ul',{class:'words'}); hist.forEach(h => ul.append(el('li',{class:'word t-'+h.type}, el('div',{class:'main'}, el('span',{class:'tag'}, NAMES[h.type]||''), el('b',{}, h.label)), el('div',{class:'meta'}, el('span',{}, (daysBetween(h.from,h.to)||1)+' giorni · chiuso il '+fmtDay(h.to)+(h.comp && h.comp.length ? ' · capito '+h.comp.map(c => c.p+'%').join(' → ') : '')))))); hb.append(ul); }
 }
 
 function renderLog(){
@@ -1358,7 +1365,7 @@ addEventListener('resize', () => go(curView, false));
 /* ---------- collegamento e notifiche ---------- */
 $('nosave').onclick = () => go('guida');
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.12-6';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.12-7';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 $('appver').textContent = APP_VERSION;
 $('updbtn').onclick = async () => {
   const b = $('updbtn'); b.disabled = true; b.textContent = 'Aggiorno…';
