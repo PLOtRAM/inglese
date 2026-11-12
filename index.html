@@ -240,7 +240,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .rules ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:.92rem}
 
 /* barra in basso, avvisi, coriandoli */
-.tabbar{flex:none;background:var(--surface);border-top:1px solid var(--line);padding:6px max(12px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.tabbar{flex:none;background:var(--surface);border-top:1px solid var(--line);padding:4px max(12px,env(safe-area-inset-right,0px)) max(2px,calc(env(safe-area-inset-bottom,0px) - 18px)) max(12px,env(safe-area-inset-left,0px))}
 .dock{position:relative;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);padding:5px;border-radius:99px;width:min(440px,100%);background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
 .dock i{position:absolute;top:5px;bottom:5px;left:5px;width:calc((100% - 10px)/4);border-radius:99px;background:var(--fg);will-change:transform}
 .dock a{position:relative;padding:10px 0;text-align:center;text-decoration:none;color:var(--muted);font-weight:700;font-size:.9rem;white-space:nowrap;transition:color .15s}
