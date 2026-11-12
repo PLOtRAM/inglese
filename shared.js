@@ -79,6 +79,10 @@ function streakOf(days, today){
   return {streak:run, best, bank, used};
 }
 
+// Livelli: ore totali di ascolto necessarie per ciascuno (usati dall'app e dalla notifica della domenica)
+const LEVELS = [[0,'Pulcini'],[3,'Allievi'],[10,'Juniores'],[25,'Panchina'],[50,'Titolare'],[100,'Capitano'],[175,'Serie A'],[300,'Champions'],[500,'Nazionale']];
+const levelOf = totalMin => { let li = 0; LEVELS.forEach((l, i) => { if(totalMin/60 >= l[0]) li = i; }); return li; };
+
 // Semplificato a blocchi: «Peppa Pig, stagione 1, episodi 4-6 (~15′)». Il blocco si legge dal testo, così se lo correggi a mano il prossimo riparte da lì.
 // Il blocco cambia solo quando chiudi all'80%, non con i minuti: il Semplificato si ripete finché non lo capisci.
 const BLOCK_RE = /^(.*?),\s*stagione\s+(\d+),\s*episodi\s+(\d+)\s*[-–]\s*(\d+)\s*(\(~\s*\d+\s*′?\))?\s*$/i;
@@ -155,4 +159,4 @@ function achieve(days, state, today, goalToday){
   return {vals, earned, week: weekMissions(cur), weekGold: gold(cur)};
 }
 
-if(typeof module!=='undefined') module.exports = {minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};
+if(typeof module!=='undefined') module.exports = {minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};

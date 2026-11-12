@@ -93,4 +93,8 @@ assert.equal(S.nextBlockLabel('Peppa Pig, stagione 1, episodi 6-4'), 'Peppa Pig,
 assert.equal(S.nextBlockLabel(''), '');
 assert.equal(S.nextBlockLabel(undefined), '');
 
+// levelOf: soglie in ore, sul totale in minuti
+assert.equal(S.levelOf(0), 0); assert.equal(S.levelOf(179), 0); assert.equal(S.levelOf(180), 1); assert.equal(S.levelOf(600), 2);
+assert.equal(S.levelOf(500*60), S.LEVELS.length - 1); assert.equal(S.levelOf(99999*60), S.LEVELS.length - 1);
+
 console.log('shared.js: tutto a posto');

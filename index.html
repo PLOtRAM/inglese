@@ -1210,7 +1210,6 @@ $('w-q').oninput = renderWords;
 $('w-hide').onclick = () => { hideTr = !hideTr; ls.set('hideTr', hideTr ? '1' : '0'); renderWords(); };
 
 /* ---------- PROGRESSI ---------- */
-const LEVELS = [[0,'Pulcini'],[3,'Allievi'],[10,'Juniores'],[25,'Panchina'],[50,'Titolare'],[100,'Capitano'],[175,'Serie A'],[300,'Champions'],[500,'Nazionale']];
 const okDay = d => { const v = norm(days[d]); return K.every(k => v[k]>=MIN); };
 function stats(){
   let total = 0, perfect = 0, best = 0, run = 0, prev = null;
@@ -1388,7 +1387,7 @@ $('nosave').onclick = () => go('guida');
 const APP_VERSION = '2026.11.12-9';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
-  ['2026.11.12-9', ['Parola al volo dal tasto Azione: crea un Comando Rapido che apre «…/inglese/#parola».', 'Nella notifica della sera, la settimana d’oro e (la domenica) il livello.', 'Qui in Guida vedi cosa è cambiato a ogni aggiornamento.']],
+  ['2026.11.12-9', ['Parola al volo dal tasto Azione: crea un Comando Rapido che apre «…/inglese/#parola».', 'Nella notifica della sera compare la settimana d’oro (venerdì e domenica) e, la domenica, il livello se c’è posto.', 'Qui in Guida vedi cosa è cambiato a ogni aggiornamento.']],
   ['2026.11.12-8', ['Avviso se un podcast non si aggiorna.', 'Nel piano del giorno, il confronto con la settimana scorsa.', 'Semplificato a blocchi di episodi: all’80% propone il blocco dopo.', 'Colori del tema chiaro più leggibili.']],
   ['2026.11.12-7', ['Il riquadro della parola sta sopra la tastiera.', '«Quanto hai capito?» è uguale su tutte le card; toccando di nuovo il valore lo togli.']],
 ];

@@ -15,7 +15,7 @@ assert.ok(nov && nov[1] === ver, 'la prima voce di NOVITA ('+(nov && nov[1])+') 
 
 // daily.mjs (repository dei dati, privato) importa questi nomi da shared.js: se ne togli uno, la notifica del mattino si rompe senza che l'app se ne accorga.
 // Tieni questo elenco uguale a quello in testa a daily.mjs.
-const NEEDED = ['streakOf', 'K', 'NAMES', 'ymd', 'mondayOf', 'dueOf', 'planOf'];
+const NEEDED = ['streakOf', 'K', 'NAMES', 'ymd', 'mondayOf', 'dueOf', 'planOf', 'achieve', 'LEVELS', 'levelOf'];
 const S = require('../shared.js');
 NEEDED.forEach(n => assert.ok(n in S, 'shared.js non esporta '+n));
 
