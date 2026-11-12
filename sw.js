@@ -1,6 +1,6 @@
 // Service worker: app disponibile senza rete e notifica del mattino.
-const CACHE = 'inglese-v2';
-const SHELL = ['./', 'shared.js', 'manifest.webmanifest', 'icon-192.png'];
+const CACHE = 'inglese-v3';
+const SHELL = ['./', 'shared.js', 'manifest.webmanifest', 'icon-192.png', 'fonts/atkinson-hyperlegible-400.woff2', 'fonts/atkinson-hyperlegible-700.woff2', 'fonts/bricolage-grotesque.woff2', 'fonts/jetbrains-mono.woff2'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k!==CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

@@ -19,6 +19,12 @@ const NEEDED = ['streakOf', 'K', 'NAMES', 'ymd', 'mondayOf', 'dueOf', 'planOf', 
 const S = require('../shared.js');
 NEEDED.forEach(n => assert.ok(n in S, 'shared.js non esporta '+n));
 
+// i caratteri sono copiati nell'app: ogni file citato in @font-face esiste, e non si torna a chiamare Google (richiesta in più, e niente caratteri senza rete)
+assert.ok(!/fonts\.googleapis|fonts\.gstatic/.test(html), 'index.html chiama di nuovo i caratteri di Google');
+const woffs = [...html.matchAll(/url\((fonts\/[^)]+\.woff2)\)/g)].map(m => m[1]);
+assert.ok(woffs.length >= 4, 'mancano i @font-face');
+woffs.forEach(f => { const b = fs.readFileSync(path.join(__dirname, '..', f)); assert.equal(b.slice(0, 4).toString(), 'wOF2', f+' non è un woff2'); assert.ok(read('sw.js').includes(f), f+' non è nella lista del service worker'); });
+
 // elementi che il codice cerca per id: se uno sparisce l'app si ferma al caricamento
 ['fab','sheet','qform','q-word','missions','paths','metapaths','lastach','setup','setupsum','appver','updbtn','whatsnew','now','mixer','report','piano','podsum','themes']
   .forEach(id => assert.ok(html.includes('id="'+id+'"'), 'in index.html manca #'+id));

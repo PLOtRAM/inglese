@@ -15,8 +15,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#f1f3f8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0c1117" media="(prefers-color-scheme: dark)">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
+/* Caratteri copiati nell'app (Google Fonts, sottoinsieme latino; licenza OFL): niente richieste a Google, funzionano anche senza rete. */
+@font-face{font-family:'Atkinson Hyperlegible';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-400.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Atkinson Hyperlegible';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/atkinson-hyperlegible-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:600 800;font-display:swap;src:url(fonts/bricolage-grotesque.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500 700;font-display:swap;src:url(fonts/jetbrains-mono.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
 /* Layout: quattro viste affiancate (Oggi, Parole, Progressi, Guida) che si scorrono col dito; la barra in basso segue lo scorrimento.
    Il cuore è un mixer a tre canali: ogni tacca vale 5 minuti, i tre livelli devono restare in pari. */
 :root{
@@ -1384,9 +1388,10 @@ addEventListener('resize', () => go(curView, false));
 /* ---------- collegamento e notifiche ---------- */
 $('nosave').onclick = () => go('guida');
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.12-9';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.12-10';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.12-10', ['I caratteri sono dentro l’app: niente più attesa o caratteri diversi senza rete.']],
   ['2026.11.12-9', ['Parola al volo dal tasto Azione: crea un Comando Rapido che apre «…/inglese/#parola».', 'Nella notifica della sera compare la settimana d’oro (venerdì e domenica) e, la domenica, il livello se c’è posto.', 'Qui in Guida vedi cosa è cambiato a ogni aggiornamento.']],
   ['2026.11.12-8', ['Avviso se un podcast non si aggiorna.', 'Nel piano del giorno, il confronto con la settimana scorsa.', 'Semplificato a blocchi di episodi: all’80% propone il blocco dopo.', 'Colori del tema chiaro più leggibili.']],
   ['2026.11.12-7', ['Il riquadro della parola sta sopra la tastiera.', '«Quanto hai capito?» è uguale su tutte le card; toccando di nuovo il valore lo togli.']],
