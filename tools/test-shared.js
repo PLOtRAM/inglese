@@ -32,4 +32,44 @@ assert.equal(gap.streak, 2);
 assert.deepEqual(gap.used, ['2026-11-11']);
 assert.equal(S.streakOf({}, '2026-11-12').streak, 0);
 
+// achieve: percorsi, missioni della settimana, traguardi
+const dayList = (from, n, v) => Object.fromEntries(Array.from({length:n}, (_,i) => { const d = new Date(from+'T12:00'); d.setDate(d.getDate()+i); return [S.ymd(d), Object.assign({u:'min', g:30}, v)]; }));
+let A = S.achieve({}, {}, '2026-11-12', 30);
+assert.deepEqual(A.earned, []);
+assert.equal(A.vals.serie, 0);
+assert.equal(A.week.length, 4);
+assert.equal(S.achieve(undefined, undefined, '2026-11-12', 30).earned.length, 0);          // dati assenti: nessun errore
+// sette giorni col minimo: tappe 1, 3 e 7 della serie, non la 14
+A = S.achieve(dayList('2026-11-06', 7, {sem:15, quo:15, tec:15}), {}, '2026-11-12', 30);
+assert.ok(['serie:1','serie:3','serie:7'].every(id => A.earned.includes(id)));
+assert.ok(!A.earned.includes('serie:14'));
+assert.equal(A.vals.obiettivo, 0);                                                         // 15′ non è l'obiettivo di 30′
+// il giorno in corso usa l'obiettivo di oggi, quelli passati il loro
+A = S.achieve({'2026-11-12':{u:'min', sem:45, quo:45, tec:45, g:30}, '2026-11-11':{u:'min', sem:30, quo:30, tec:30, g:45}}, {}, '2026-11-12', 45);
+assert.equal(A.vals.obiettivo, 1);
+// parole, imparate, ripasso, spezzoni
+const manyWords = Array.from({length:12}, (_,i) => ({date:'2026-11-10', got:i<10}));
+A = S.achieve({}, {words: manyWords, revDays:['2026-11-10','2026-11-11','2026-11-12'], history:[{}]}, '2026-11-12', 30);
+assert.ok(['parole:10','imparate:10','ripasso:3','spezzoni:1'].every(id => A.earned.includes(id)));
+assert.equal(A.week.find(m => m.id==='par').val, 12);
+// settimana d'oro: lunedì-domenica contano a sé; una nuova settimana riparte da zero
+const gold = {days:dayList('2026-11-09', 7, {sem:30, quo:30, tec:30}), state:{words:Array.from({length:5}, () => ({date:'2026-11-10'})), revDays:['2026-11-09','2026-11-10','2026-11-11','2026-11-12']}};
+A = S.achieve(gold.days, gold.state, '2026-11-15', 30);              // domenica
+assert.equal(A.weekGold, true);
+assert.ok(A.earned.includes('settimane:1'));
+A = S.achieve(gold.days, gold.state, '2026-11-16', 30);              // lunedì dopo: missioni a zero, ma la settimana d'oro resta
+assert.equal(A.weekGold, false);
+assert.equal(A.week.find(m => m.id==='min').val, 0);
+assert.ok(A.earned.includes('settimane:1'));
+// percorsi che contano gli altri
+assert.ok(A.vals.fronti >= 2 && A.vals.collezione >= 5);
+// le vecchie tappe restano: stesse soglie dei 14 traguardi di prima
+['serie:1','serie:3','serie:7','serie:30','obiettivo:1','obiettivo:10','spezzoni:1','spezzoni:5','parole:10','imparate:10','ripasso:7'].forEach(id => {
+  const [t, n] = id.split(':'); assert.ok(S.TRACKS.find(x => x.id===t).tiers.some(x => x[0]===+n), id);
+});
+// ogni percorso ha soglie crescenti e le tappe di quelli base stanno sotto i limiti di conservazione dei dati (parole 500, storico 100, ripasso 200)
+S.TRACKS.forEach(t => t.tiers.forEach((x, i) => { if(i) assert.ok(x[0] > t.tiers[i-1][0], t.id); }));
+assert.ok(Math.max(...S.TRACKS.find(t => t.id==='parole').tiers.map(x => x[0])) < 500);
+assert.ok(Math.max(...S.TRACKS.find(t => t.id==='spezzoni').tiers.map(x => x[0])) <= 100);
+
 console.log('shared.js: tutto a posto');

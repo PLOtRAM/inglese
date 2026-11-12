@@ -226,13 +226,6 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .heat .now{outline:2px solid var(--fg);outline-offset:1px}
 .legend{display:flex;gap:12px;font-size:.8rem;color:var(--muted);flex-wrap:wrap;align-items:center}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
-.badges{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-@media (min-width:560px){.badges{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.badge{border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:grid;gap:2px;background:var(--surface);opacity:.55}
-.badge b{font-size:.95rem}
-.badge span{font-size:.8rem;color:var(--muted)}
-.badge.got{opacity:1;border-color:var(--gold);background:color-mix(in srgb,var(--gold) 10%,var(--surface))}
-.badge.got b::before{content:"★ ";color:var(--gold)}
 .rules{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:440px){.rules{grid-template-columns:1fr}}
 .rules ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:.92rem}
@@ -302,6 +295,36 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .foldbody{display:grid;gap:10px;padding-bottom:16px}
 .foldbody .plan .step{padding:10px 0}
 @media (prefers-reduced-motion:reduce){.fold>summary::after{transition:none}}
+/* progressi: missioni, percorsi, traguardi */
+.m-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.missions{display:grid;gap:14px}
+.mission{display:grid;gap:6px}
+.m-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.m-top .mono{font-size:.92rem;font-weight:700}
+.mission .bar i{background:var(--gold);width:0;transition:width .5s}
+.mission.done .bar i{background:var(--ok)}
+.mission.done .m-top .mono{color:var(--ok)}
+.sub-h{margin-top:6px}
+.paths{display:grid;gap:10px}
+@media (min-width:560px){.paths{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.path{display:grid;gap:8px;align-content:start;padding:14px 16px;border-radius:var(--r-l);background:var(--surface);border:1px solid var(--line);box-shadow:var(--sh)}
+.path .p-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.path .p-name{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:800;font-size:1.05rem}
+.path .p-name::before{content:"";width:9px;height:9px;border-radius:99px;background:var(--c)}
+.path .p-count{font-size:.8rem;color:var(--muted);font-weight:700}
+.path .p-next{font-weight:700}
+.path .bar i{background:var(--c);width:0;transition:width .5s}
+.pips{display:flex;gap:6px;flex-wrap:wrap}
+.pip{width:14px;height:14px;border-radius:99px;background:var(--surface2);border:2px solid transparent}
+.pip.on{background:var(--c)}
+.pip.cur{border-color:var(--c)}
+.path.done{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 9%,var(--surface))}
+.path.done .p-next{color:var(--gold)}
+.lastach{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.lastach li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 14px;border-radius:var(--r-m);background:var(--surface);border:1px solid var(--line)}
+.lastach li b::before{content:"★ ";color:var(--gold)}
+.lastach .when{font-size:.82rem;color:var(--muted);white-space:nowrap}
+
 /* pulsante + e parola al volo */
 .fab{position:fixed;z-index:40;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(78px + max(2px,calc(env(safe-area-inset-bottom,0px) - 18px)));width:46px;height:46px;border-radius:99px;border:0;padding:0;display:grid;place-items:center;background:var(--fg);color:var(--bg);box-shadow:0 12px 26px -10px rgb(0 0 0/.5);transition:transform .15s}
 .fab:active{transform:scale(.93)}
@@ -458,6 +481,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <div class="top"><span class="name" id="lvl-name"></span><span class="hint mono" id="lvl-next"></span></div>
       <div class="bar" aria-hidden="true"><i id="lvl-bar" style="background:var(--gold)"></i></div>
       <p class="hint">Il livello sale con le ore totali di ascolto: ogni 5′ segnati contano.</p>
+      <p class="hint" id="lvl-eta"></p>
     </section>
 
     <section class="stats" aria-label="Numeri">
@@ -468,6 +492,12 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
     </section>
 
     <p class="hint" id="jolly"></p>
+
+    <section class="card" aria-labelledby="h-mis">
+      <div class="m-head"><h2 id="h-mis">Missioni della settimana</h2><span class="hint" id="mis-gold"></span></div>
+      <div class="missions" id="missions"></div>
+      <p class="hint" id="mis-note"></p>
+    </section>
 
     <section class="card" aria-labelledby="h-wk">
       <h2 id="h-wk">Questa settimana</h2>
@@ -486,9 +516,17 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <div id="months" style="display:grid;gap:14px"></div>
     </section>
 
-    <section aria-labelledby="h-badges" style="display:grid;gap:10px">
-      <h2 id="h-badges">Traguardi</h2>
-      <div class="badges" id="badges"></div>
+    <section aria-labelledby="h-paths" class="sec">
+      <h2 id="h-paths">Percorsi</h2>
+      <p class="hint">Ogni percorso è una scala di traguardi: ne vedi uno alla volta, il prossimo. Quelli in fondo mettono insieme gli altri.</p>
+      <div class="paths" id="paths"></div>
+      <h3 class="sub-h">Imprese</h3>
+      <div class="paths" id="metapaths"></div>
+    </section>
+
+    <section aria-labelledby="h-last" class="sec">
+      <h2 id="h-last">Ultimi traguardi</h2>
+      <ul class="lastach" id="lastach"></ul>
     </section>
 
     <section aria-labelledby="h-hist" style="display:grid;gap:10px">
@@ -741,18 +779,20 @@ async function pull(){
 }
 const sync = () => dirty ? push() : pull();
 function logEv(e){ const n = new Date(); log = log.concat({t: ymd(n)+' '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds()), e}).slice(-500); }
-function saveState(patch, ev){ if(ev) logEv(ev); state = Object.assign({}, state, patch); renderAll(); queueSave(); }
+function saveState(patch, ev){ if(ev) logEv(ev); achSnapshot(); state = Object.assign({}, state, patch); const fresh = achCheck(); renderAll(); queueSave(); achNotify(fresh); }
 
 /* ---------- avvisi e coriandoli ---------- */
 let toastTimer;
+let achPending = '';
 function toast(msg, undo){
+  if(achPending){ msg = msg ? msg+' · '+achPending : achPending; achPending = ''; }
   const t = $('toast'); t.textContent = ''; t.append(msg);
   if(undo) t.append(el('button',{type:'button', onclick:()=>{ t.hidden = true; undo(); }}, 'Annulla'));
   t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, undo ? 6000 : 3200);
 }
 function confetti(){
   if(matchMedia('(prefers-reduced-motion:reduce)').matches) return;
-  const c = $('confetti'), x = c.getContext('2d'); c.hidden = false;
+  const c = $('confetti'), x = c.getContext('2d'); if(!c.hidden) return; c.hidden = false;
   c.width = innerWidth; c.height = innerHeight;
   const cs = getComputedStyle(document.documentElement);
   const cols = ['--sem','--quo','--tec','--gold'].map(v => cs.getPropertyValue(v).trim());
@@ -768,12 +808,12 @@ function confetti(){
 /* ---------- OGGI ---------- */
 let bumpK = null;
 function setMin(k, v){
-  bumpK = k;
+  bumpK = k; achSnapshot();
   const before = today(), g = goal();
   const t = Object.assign({}, before, {[k]: Math.max(0, v)});
   days[TODAY] = {date:TODAY, sem:t.sem, quo:t.quo, tec:t.tec, u:'min', g};
   if(k==='quo' && state) state = Object.assign({}, state, {quo: advanceEp(state.quo, t.quo-before.quo)});
-  logEv(NAMES[k]+': '+before[k]+'′ → '+t[k]+'′'); renderAll(); queueSave();
+  logEv(NAMES[k]+': '+before[k]+'′ → '+t[k]+'′'); const fresh = achCheck(); renderAll(); queueSave(); achNotify(fresh);
   const was = K.every(x => before[x]>=g), is = K.every(x => t[x]>=g);
   if(!was && is){ confetti(); toast('Obiettivo di oggi raggiunto: '+g*3+'′'); }
   else if(!K.every(x => before[x]>=MIN) && K.every(x => t[x]>=MIN)) toast('Minimo fatto: la serie continua');
@@ -1143,6 +1183,76 @@ function stats(){
   const ws = wordsOf();
   return {total, hours, perfect, best, streak, bank: sk.bank, used: sk.used, li, words: ws.length, learned: ws.filter(w => w.got || w.ivl>=21).length, revs: ((state && state.revDays) || []).length, passes: ((state && state.history) || []).length};
 }
+/* ---------- TRAGUARDI: sblocco, salvataggio e annuncio ----------
+   I traguardi ottenuti si salvano in state.ach (con la data), così un parola cancellata non ne toglie nessuno.
+   Si scrive solo dentro setMin/saveState, mai nel disegno: un salvataggio dal disegno rientrerebbe in renderAll. */
+const trackOf = id => TRACKS.find(t => t.id===id);
+const tierName = id => { const [t, n] = id.split(':'), x = trackOf(t) && trackOf(t).tiers.find(y => y[0]===+n); return x ? x[1] : id; };
+const achNow = () => achieve(days, state, TODAY, goal());
+function achSnapshot(){      // prima scrittura in assoluto: ciò che c'è già non si festeggia
+  if(!state || state.ach) return;
+  const got = {}; achNow().earned.forEach(id => { got[id] = ''; });
+  state = Object.assign({}, state, {ach: {got, lvl: stats().li, lvlDate: ''}});
+}
+function achCheck(){         // dopo una scrittura: cosa si è sbloccato adesso (nomi da annunciare)
+  if(!state || !state.ach) return null;
+  const A = achNow(), li = stats().li, have = new Set(A.earned), got = Object.assign({}, state.ach.got), fresh = [];
+  A.earned.forEach(id => { if(!(id in got)){ got[id] = TODAY; fresh.push(tierName(id)); } });
+  Object.keys(got).forEach(id => { if(got[id]===TODAY && !have.has(id)) delete got[id]; });     // sbloccato oggi e ritolto con −5′: non vale
+  let lvl = state.ach.lvl, lvlDate = state.ach.lvlDate, up = '';
+  if(li > lvl){ lvl = li; lvlDate = TODAY; up = 'Nuovo livello: '+LEVELS[li][1]; }
+  else if(li < lvl && lvlDate===TODAY) lvl = li;
+  const next = {got, lvl, lvlDate};
+  if(JSON.stringify(next) !== JSON.stringify(state.ach)) state = Object.assign({}, state, {ach: next});
+  return {up, fresh};
+}
+function achNotify(r){       // un solo avviso, accodato a quello di chi ha scritto
+  if(!r || (!r.up && !r.fresh.length)) return;
+  const tr = r.fresh.length===1 ? 'Traguardo: '+r.fresh[0] : r.fresh.length ? r.fresh.length+' traguardi: '+r.fresh.join(', ') : '';
+  achPending = [r.up, tr].filter(Boolean).join(' · ');
+  confetti();
+  setTimeout(() => { if(achPending) toast(''); }, 0);
+}
+function renderGame(s){
+  const A = achNow(), got = (state && state.ach && state.ach.got) || {};
+  // quando arriva il livello dopo, al ritmo degli ultimi 7 giorni
+  const nx = LEVELS[s.li+1], eta = $('lvl-eta'); eta.textContent = '';
+  if(nx){
+    let last7 = 0; for(let i=0;i<7;i++) last7 += sum(norm(days[addDays(TODAY, -i)]));
+    const rate = last7/7, left = nx[0]*60 - s.total;
+    if(rate>0 && left>0 && left/rate<=999) eta.textContent = 'Al ritmo degli ultimi 7 giorni ('+Math.round(rate)+'′ al giorno) arrivi a '+nx[1]+' tra circa '+Math.max(1, Math.ceil(left/rate))+' giorni.';
+  }
+  // missioni
+  const mb = $('missions'); mb.textContent = '';
+  A.week.forEach(m => {
+    const done = m.val>=m.target;
+    mb.append(el('div',{class:'mission'+(done ? ' done' : '')},
+      el('div',{class:'m-top'}, el('b',{}, m.name), el('span',{class:'mono'}, done ? '✓ fatto' : m.val+' / '+m.target)),
+      el('div',{class:'bar','aria-hidden':'true'}, el('i',{style:'width:'+Math.min(100, m.val/m.target*100)+'%'})),
+      el('span',{class:'hint'}, done ? m.val+' '+(m.val===1 ? m.one : m.unit)+' · '+m.hint : (m.target-m.val===1 ? 'Manca 1 '+m.one : 'Mancano '+(m.target-m.val)+' '+m.unit)+' · '+m.hint)));
+  });
+  $('mis-gold').textContent = A.weekGold ? '★ Settimana d’oro' : A.vals.settimane+(A.vals.settimane===1 ? ' settimana d’oro' : ' settimane d’oro');
+  $('mis-note').textContent = A.weekGold ? 'Hai completato tutte e 4 le missioni: la settimana è d’oro.' : 'Completa tutte e 4 per fare una settimana d’oro. Le missioni si azzerano il lunedì.';
+  // percorsi
+  const card = t => {
+    const v = A.vals[t.id], idx = t.tiers.filter(x => v>=x[0]).length, next = t.tiers[idx];
+    const pips = el('div',{class:'pips', role:'list', 'aria-label':'Tappe del percorso'}, ...t.tiers.map((x,i) => el('span',{class:'pip'+(i<idx ? ' on' : '')+(i===idx ? ' cur' : ''), role:'listitem', title:x[1]+' · '+x[0], 'aria-label':x[1]+(i<idx ? ', ottenuto' : '')})));
+    return el('article',{class:'path'+(next ? '' : ' done'), style:'--c:var('+t.col+')'},
+      el('div',{class:'p-top'}, el('span',{class:'p-name'}, t.name), el('span',{class:'p-count'}, idx+' / '+t.tiers.length)),
+      el('div',{class:'p-next'}, next ? 'Prossimo: '+next[1] : '★ Percorso completato'),
+      next ? el('div',{class:'bar','aria-hidden':'true'}, el('i',{style:'width:'+Math.min(100, v/next[0]*100)+'%'})) : null,
+      el('span',{class:'hint'}, next ? v+' / '+next[0]+' '+t.unit+' · '+t.todo : v+' '+t.unit),
+      pips);
+  };
+  const pb = $('paths'), mp = $('metapaths'); pb.textContent = ''; mp.textContent = '';
+  TRACKS.forEach(t => (t.meta ? mp : pb).append(card(t)));
+  // ultimi traguardi
+  const lb = $('lastach'); lb.textContent = '';
+  const dated = Object.entries(got).filter(([,d]) => d).sort((a,b) => b[1]<a[1] ? -1 : b[1]>a[1] ? 1 : 0).slice(0, 6);
+  dated.forEach(([id,d]) => lb.append(el('li',{}, el('b',{}, tierName(id)), el('span',{class:'when'}, trackOf(id.split(':')[0]).name+' · '+fmtDay(d)))));
+  if(!dated.length) lb.append(el('li',{class:'empty'}, 'I traguardi che sblocchi da qui in avanti compaiono qui, con la data. Finora ne hai '+A.earned.length+' su '+TRACKS.reduce((n,t) => n+t.tiers.length, 0)+'.'));
+}
+
 function renderProgress(){
   const s = stats(), lv = LEVELS[s.li], nx = LEVELS[s.li+1];
   $('streak').textContent = s.streak+(s.streak===1 ? ' giorno' : ' giorni');
@@ -1175,24 +1285,7 @@ function renderProgress(){
     ht.append(el('span',{class:(lvl ? 'h'+lvl : '')+(dt>TODAY?' fut':'')+(dt===TODAY?' now':''), title: fmtDay(dt)+': '+sum(v)+'′'}));
   }
 
-  // traguardi
-  const B = [
-    ['Calcio d’inizio','Primo giorno con 15′ per tipo', s.best>=1],
-    ['Tre di fila','3 giorni consecutivi', s.best>=3],
-    ['Settimana piena','7 giorni consecutivi', s.best>=7],
-    ['Un mese senza buchi','30 giorni consecutivi', s.best>=30],
-    ['Giornata perfetta','Obiettivo del giorno raggiunto', s.perfect>=1],
-    ['Dieci su dieci','10 giorni a obiettivo', s.perfect>=10],
-    ['Primo 80%','Uno spezzone capito e chiuso', s.passes>=1],
-    ['Giro completo','5 spezzoni chiusi all’80%', s.passes>=5],
-    ['Taccuino','10 parole segnate', s.words>=10],
-    ['Vocabolario','10 parole imparate (ripasso oltre 3 settimane)', s.learned>=10],
-    ['Memoria allenata','7 giorni di ripasso completato', s.revs>=7],
-    ['10 ore','10 ore di ascolto', s.hours>=10],
-    ['50 ore','50 ore di ascolto', s.hours>=50],
-    ['100 ore','100 ore di ascolto', s.hours>=100]];
-  const bg = $('badges'); bg.textContent = '';
-  B.forEach(b => bg.append(el('div',{class:'badge'+(b[2]?' got':'')}, el('b',{}, b[0]), el('span',{}, b[1]))));
+  renderGame(s);
 
   // mese per mese: ore per tipo, giorni col minimo, parole e spezzoni chiusi
   const mm = {}, hm = n => Math.floor(n/60)+' h '+pad(n%60)+'′';
