@@ -556,6 +556,12 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <p class="hint">Automatico segue le impostazioni del telefono. Con Chiaro o Scuro l’app resta sempre così.</p>
     </section>
 
+    <section class="card" aria-labelledby="h-app">
+      <h2 id="h-app">App</h2>
+      <p class="hint">Versione <b id="appver"></b>. Se non vedi le novità appena pubblicate, tocca qui sotto: scarica di nuovo i file dell’app. I tuoi dati e le notifiche restano.</p>
+      <div class="row"><button type="button" class="btn" id="updbtn">Aggiorna l’app</button></div>
+    </section>
+
     <details class="fold">
       <summary>Cronologia</summary>
       <div><p class="hint">Le ultime azioni fatte nell’app, dalla più recente.</p><ul id="loglist"></ul></div>
@@ -1160,9 +1166,12 @@ $('wform').onsubmit = e => {
   setTimeout(() => { b.classList.remove('ok'); if(!editId) b.textContent = 'Aggiungi parola'; }, 1300);
 };
 // la traduzione si aggiunge dopo, dalla vista Parole; la provenienza è il podcast in corso
-const sheet = $('sheet');
-const openSheet = () => { sheet.hidden = false; $('q-word').focus(); };
-const closeSheet = () => { sheet.hidden = true; $('q-word').value = ''; if(document.activeElement) document.activeElement.blur(); };
+const sheet = $('sheet'), vv = window.visualViewport;
+// Su iPhone la tastiera copre il fondo della pagina senza ridimensionarla: il foglio segue l'area davvero visibile, così sta sopra la tastiera.
+const fitSheet = () => { if(!vv || sheet.hidden) return; sheet.style.top = vv.offsetTop+'px'; sheet.style.height = vv.height+'px'; };
+if(vv){ vv.addEventListener('resize', fitSheet); vv.addEventListener('scroll', fitSheet); }
+const openSheet = () => { sheet.hidden = false; fitSheet(); $('q-word').focus(); [100, 350, 700].forEach(t => setTimeout(fitSheet, t)); };
+const closeSheet = () => { sheet.hidden = true; sheet.style.top = ''; sheet.style.height = ''; $('q-word').value = ''; if(document.activeElement) document.activeElement.blur(); };
 $('fab').onclick = openSheet; $('sheet-x').onclick = closeSheet;
 sheet.onclick = e => { if(e.target===sheet) closeSheet(); };
 document.addEventListener('keydown', e => { if(e.key==='Escape' && !sheet.hidden) closeSheet(); });
@@ -1348,6 +1357,17 @@ addEventListener('resize', () => go(curView, false));
 
 /* ---------- collegamento e notifiche ---------- */
 $('nosave').onclick = () => go('guida');
+/* ---------- VERSIONE E AGGIORNAMENTO ---------- */
+const APP_VERSION = '2026.11.12-6';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+$('appver').textContent = APP_VERSION;
+$('updbtn').onclick = async () => {
+  const b = $('updbtn'); b.disabled = true; b.textContent = 'Aggiorno…';
+  try{
+    if('serviceWorker' in navigator){ const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.update())); }   // il service worker resta: ci sono le notifiche
+    if(window.caches){ const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); }
+  }catch(e){}
+  location.reload();
+};
 /* ---------- TEMA ---------- */
 function applyTheme(t){
   const r = document.documentElement, forced = t==='light' || t==='dark';
