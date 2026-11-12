@@ -292,6 +292,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .fold[open]>summary{border-bottom:1px solid var(--line);margin-bottom:12px}
 .fold>summary>span:first-child{white-space:nowrap}
 .fold .sum{flex:1 1 auto;font-family:var(--f-body);font-weight:400;font-size:.84rem;color:var(--muted);text-align:right}
+.fold .sum.warn{color:var(--warn);font-weight:700}
 .foldbody{display:grid;gap:10px;padding-bottom:16px}
 .foldbody .plan .step{padding:10px 0}
 @media (prefers-reduced-motion:reduce){.fold>summary::after{transition:none}}
@@ -424,7 +425,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
     </details>
 
     <details class="fold">
-      <summary><span id="h-pods">Prossimi podcast</span></summary>
+      <summary><span id="h-pods">Prossimi podcast</span><span class="sum warn" id="podsum"></span></summary>
       <div class="foldbody">
         <ol class="pods" id="pods"></ol>
         <p class="hint" id="podsnote"></p>
@@ -1000,13 +1001,16 @@ function openTurno(){      // dalla notifica della sera: Oggi, con aperta la sce
 }
 function closePiano(){ $('piano').hidden = true; if(location.hash==='#piano') history.replaceState(null,'',location.pathname); }
 function renderFeed(){
-  const box = $('pods'); box.textContent = '';
+  const box = $('pods'); box.textContent = ''; $('podsum').textContent = '';
   if(!feed || !feed.pods){ box.append(el('li',{class:'empty'}, 'Qui compaiono i titoli dei prossimi episodi, appena arrivano.')); $('podsnote').textContent = ''; return; }
+  // «fermo» = l'ultimo giro riuscito è più vecchio di 3 giorni (non la data dell'ultimo episodio). Se manca il dato, niente avviso.
+  const ok = feed.ok || {}, stale = TOPICS.filter(t => ok[t] && daysBetween(ok[t], TODAY) > 3), allOld = feed.updated && daysBetween(feed.updated, TODAY) > 3;
+  $('podsum').textContent = allOld ? '⚠ titoli fermi dal '+fmtDay(feed.updated) : stale.length ? '⚠ '+(stale.length===1 ? stale[0]+' non si aggiorna' : stale.length+' podcast non si aggiornano') : '';
   const start = Math.max(0, TOPICS.indexOf(state && state.tec && state.tec.topic));
   for(let i=1;i<=TOPICS.length;i++){
     const name = TOPICS[(start+i)%TOPICS.length], e = pickEp(name); if(!e) continue;
     box.append(el('li',{class:'pod'+(i===1?' first':'')}, el('span',{class:'tag'}, name+(i===1?' · il prossimo':'')), e.url ? el('a',{href:e.url, target:'_blank', rel:'noopener'}, el('b',{}, epTitle(e))) : el('b',{}, epTitle(e)),
-      el('span',{class:'where'}, e.min+'′ · uscito il '+fmtDay(e.date)+(e.min>30 ? ' · ascolta i primi 15-20′' : ''))));
+      el('span',{class:'where'}, e.min+'′ · uscito il '+fmtDay(e.date)+(e.min>30 ? ' · ascolta i primi 15-20′' : '')+(stale.includes(name) ? ' · ⚠ non aggiornato dal '+fmtDay(ok[name]) : ''))));
   }
   $('podsnote').textContent = 'Titoli aggiornati il '+fmtDay(feed.updated)+'. Quando chiudi un podcast all’80%, prendi l’episodio più recente di quello dopo.';
 }
