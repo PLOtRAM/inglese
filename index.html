@@ -921,14 +921,15 @@ function renderNow(){
         // comprensione stimata a ogni riascolto: la curva dice quando si arriva all'80%, e da lì si passa al prossimo
         const cp = cur.comp || [], lastP = cp.length && cp[cp.length-1].d===TODAY ? cp[cp.length-1].p : null;
         const setComp = pc => {
-          const a = cp.slice(-19); if(a.length && a[a.length-1].d===TODAY) a.pop();
-          a.push({d:TODAY, p:pc}); if(pc>=80) openNext = k;
-          saveState({[k]: Object.assign({}, cur, {comp:a})}, NAMES[k]+': capito '+pc+'%');
+          const a = cp.slice(-19), same = a.length && a[a.length-1].d===TODAY, off = same && a[a.length-1].p===pc;
+          if(same) a.pop();                                    // un solo valore al giorno; toccare quello scelto lo toglie
+          if(!off){ a.push({d:TODAY, p:pc}); if(pc>=80) openNext = k; }
+          saveState({[k]: Object.assign({}, cur, {comp:a})}, NAMES[k]+(off ? ': stima tolta' : ': capito '+pc+'%'));
         };
         const ch = el('div',{class:'chips scale', role:'group', 'aria-label':'Quanto hai capito'});
         [20,40,60,80,100].forEach(pc => ch.append(el('button',{type:'button','aria-pressed':String(lastP===pc), onclick:()=>setComp(pc)}, pc+'%')));
         card.append(el('div',{class:'comp'},
-          el('div',{class:'hint'}, cp.length ? 'Quanto hai capito. Finora: '+cp.map(c => c.p+'%').join(' → ') : 'Quanto hai capito all’ultimo ascolto?'),
+          el('div',{class:'hint'}, 'Quanto hai capito?'+(cp.length ? ' Finora: '+cp.map(c => c.p+'%').join(' → ') : '')+(lastP!==null ? ' · tocca di nuovo per togliere' : '')),
           ch));
       }
       if(openNext===k){
