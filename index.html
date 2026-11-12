@@ -21,7 +21,8 @@
    Il cuore è un mixer a tre canali: ogni tacca vale 5 minuti, i tre livelli devono restare in pari. */
 :root{
   --bg:#f1f3f8; --surface:#ffffff; --surface2:#e7ebf2; --fg:#121a26; --muted:#566273; --line:#d9dfe9;
-  --sem:#0b8f80; --quo:#c0660f; --tec:#4f52cc; --gold:#a87700; --ok:#27823f; --warn:#b4541a; --on:#ffffff;
+  /* tema chiaro: le tinte sono le stesse di prima, solo un po' più scure, per leggere bene anche con il sole (contrasto almeno 4,5 : 1 su scheda, sfondo e pillole) */
+  --sem:#09766a; --quo:#a0550d; --tec:#4f52cc; --gold:#8b6200; --ok:#24783a; --warn:#a94f18; --on:#ffffff;
   --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -1371,7 +1372,7 @@ addEventListener('resize', () => go(curView, false));
 /* ---------- collegamento e notifiche ---------- */
 $('nosave').onclick = () => go('guida');
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.12-7';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.12-8';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 $('appver').textContent = APP_VERSION;
 $('updbtn').onclick = async () => {
   const b = $('updbtn'); b.disabled = true; b.textContent = 'Aggiorno…';
