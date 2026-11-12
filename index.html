@@ -96,7 +96,7 @@ input[type=text],input[type=search],input[type=password]{font:inherit;font-size:
 .ch.done .ch-val{color:var(--ok)}
 .ch .add{border:0;border-radius:11px;padding:10px 0;width:100%;max-width:96px;font-weight:700;background:var(--accent);color:var(--on)}
 .ch .add:active{transform:scale(.96)}
-.ch .sub{border:0;border-radius:9px;padding:3px 0;width:50%;max-width:48px;font-weight:700;font-size:.8rem;background:color-mix(in srgb,var(--accent) 38%,var(--surface));color:var(--fg)}
+.ch .sub{border:0;border-radius:9px;padding:3px 0;width:100%;max-width:96px;font-weight:700;font-size:.8rem;background:color-mix(in srgb,var(--accent) 38%,var(--surface));color:var(--fg)}
 .ch .sub:active{transform:scale(.96)}
 .ch .sub:disabled{opacity:.45}
 .status{font-weight:700}
@@ -716,8 +716,7 @@ function renderNow(){
     const left = Math.max(0, p.target - t[k]);
     const card = el('div',{class:'track t-'+k});
     card.append(el('div',{class:'top'}, el('span',{class:'tag'}, NAMES[k]+(k==='tec' && cur.topic ? ' · '+cur.topic : '')), el('span',{class:'where mono'}, left ? 'ancora '+left+'′' : 'fatto')));
-    const nm = (cur.label || '').split(/\s·|[,(]/)[0].trim();
-    const url = k==='tec' ? (cur.url || 'https://podcasts.apple.com/it/search?term='+encodeURIComponent(cur.label || cur.topic || '')).replace(/^https?:/, 'podcasts:') : 'https://www.primevideo.com/search/?phrase='+encodeURIComponent(nm);
+    const url = k==='tec' ? (cur.url || 'https://podcasts.apple.com/it/search?term='+encodeURIComponent(cur.label || cur.topic || '')).replace(/^https?:/, 'podcasts:') : 'shortcuts://run-shortcut?name='+encodeURIComponent('Prime Video');     // Comando Rapido che apre l'app Prime Video
     if(editK===k){
       const inp = el('textarea',{rows:'1', id:'cur-'+k, 'aria-label':'Spezzone '+NAMES[k], placeholder: k==='quo' ? 'es. The Office · (~20′)' : 'spezzone in corso'});
       inp.value = cur.label || '';
