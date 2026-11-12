@@ -170,10 +170,17 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .pod.first{border-color:var(--tec)}
 .pod b{overflow-wrap:anywhere}
 
-#piano{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));display:grid;gap:12px;align-content:start}
+#piano{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;align-content:start}
+#piano::-webkit-scrollbar{display:none}
+#piano .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+#piano .x{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:99px;width:40px;height:40px;font-size:1.3rem;line-height:1;flex:none}
+#piano .card{gap:6px;padding:12px 14px}
+#piano dl{gap:6px;font-size:.93rem}
+#piano dd{line-height:1.3}
+.lab{font:inherit;font-weight:700;font-size:1.02rem;line-height:1.3;color:var(--fg);background:transparent;border:0;padding:4px 0;text-align:left;width:100%;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 #piano[hidden]{display:none}
 #piano .muted{color:var(--muted)}
-#piano h2{margin:0;font-size:1.4rem}
+#piano h2{margin:0;font-size:1.3rem}
 #piano dl{margin:0;display:grid;gap:10px}
 #piano dt{font-weight:700}
 #piano dd{margin:0;color:var(--muted)}
@@ -692,6 +699,7 @@ function renderPlan(){
   table.append(el('table',{}, el('thead',{}, el('tr',{}, el('th',{},'Giorno'), el('th',{},'Tipo'), el('th',{},'Obiettivo'), el('th',{},'Totale'))), body));
 }
 const fit = t => { t.style.height = 'auto'; t.style.height = t.scrollHeight+2+'px'; };
+let editK = null;
 function renderNow(){
   const box = $('now'); box.textContent = '';
   if(!state){ box.append(el('p',{class:'empty'}, 'Sto caricando i tuoi spezzoni…')); return; }
@@ -703,15 +711,30 @@ function renderNow(){
     const left = Math.max(0, p.target - t[k]);
     const card = el('div',{class:'track t-'+k});
     card.append(el('div',{class:'top'}, el('span',{class:'tag'}, NAMES[k]+(k==='tec' && cur.topic ? ' · '+cur.topic : '')), el('span',{class:'where mono'}, left ? 'ancora '+left+'′' : 'fatto')));
-    const inp = el('textarea',{rows:'1', id:'cur-'+k, 'aria-label':'Spezzone '+NAMES[k], placeholder: k==='quo' ? 'es. The Office' : 'spezzone in corso'});
-    inp.value = cur.label || '';
-    inp.oninput = () => fit(inp);
-    inp.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } };
-    inp.onchange = () => saveState({[k]: Object.assign({}, cur, {label: inp.value.trim(), since: cur.since || TODAY}, k==='tec' ? {url:null} : {})}, 'spezzone '+NAMES[k]+': '+inp.value.trim());
-    card.append(inp, el('div',{class:'where'}, (k==='tec' ? p.tec : p.tv)+(age ? ' · '+age : '')));
+    const nm = (cur.label || '').split(/[,(]/)[0].trim();
+    const url = k==='tec' ? (cur.url || 'https://podcasts.apple.com/it/search?term='+encodeURIComponent(cur.label || cur.topic || '')) : 'https://www.primevideo.com/search/?phrase='+encodeURIComponent(nm);
+    if(editK===k){
+      const inp = el('textarea',{rows:'1', id:'cur-'+k, 'aria-label':'Spezzone '+NAMES[k], placeholder: k==='quo' ? 'es. The Office' : 'spezzone in corso'});
+      inp.value = cur.label || '';
+      inp.oninput = () => fit(inp);
+      inp.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } };
+      inp.onchange = () => { editK = null; saveState({[k]: Object.assign({}, cur, {label: inp.value.trim(), since: cur.since || TODAY}, k==='tec' ? {url:null} : {})}, 'spezzone '+NAMES[k]+': '+inp.value.trim()); };
+      inp.onblur = () => { if(editK===k){ editK = null; renderNow(); } };
+      card.append(inp); setTimeout(() => { inp.focus(); fit(inp); }, 0);
+    } else {
+      // tocco: apre l'app giusta (Apple Podcasts / Prime Video); tocco lungo: modifica il testo
+      let timer = null, long = false;
+      const b = el('button',{type:'button', class:'lab', 'aria-label':NAMES[k]+': '+(cur.label || 'da scegliere')+'. Tocca per aprire, tieni premuto per modificare'}, cur.label ? cur.label+(k==='quo' ? ' · (dura circa '+EP_LEN+'′)' : '') : 'tieni premuto per scegliere');
+      b.onpointerdown = () => { long = false; timer = setTimeout(() => { long = true; editK = k; renderNow(); }, 450); };
+      b.onpointerup = b.onpointercancel = b.onpointerleave = () => clearTimeout(timer);
+      b.oncontextmenu = e => e.preventDefault();
+      b.onclick = () => { if(!long && cur.label) window.open(url, '_blank', 'noopener'); };
+      card.append(b);
+    }
+    card.append(el('div',{class:'where'}, (k==='tec' ? p.tec : p.tv)+(age ? ' · '+age : '')));
     if(k==='quo'){
       const q = advanceEp(cur, 0), setQ = (pos, ev) => saveState({quo: Object.assign({}, q, pos)}, ev);
-      card.append(el('div',{class:'ep mono'}, 'Stagione '+q.s+' · episodio '+q.e+' · minuto '+q.min+' di '+EP_LEN),
+      card.append(el('div',{class:'ep mono'}, 'Stagione '+q.s+' · episodio '+q.e),
         el('div',{class:'row'},
           el('button',{type:'button', class:'btn', onclick:()=>setQ({e:q.e+1, min:0}, 'quotidiano: finito S'+q.s+' E'+q.e)}, 'Episodio finito'),
           el('button',{type:'button', class:'ghost', disabled: q.e>1 ? null : '', onclick:()=>setQ({e:q.e-1, min:0}, 'quotidiano: torno a S'+q.s+' E'+(q.e-1))}, 'Episodio prima'),
@@ -738,7 +761,7 @@ function renderNow(){
           el('div',{class:'row'}, el('button',{type:'submit', class:'btn solid'}, 'Passo a questo'), el('button',{type:'button', class:'ghost', onclick:()=>{ openNext = null; renderNow(); }}, 'Annulla'))));
         setTimeout(() => nin.focus(), 0);
       } else card.append(el('div',{class:'row'}, el('button',{type:'button', class:'btn', onclick:()=>{ openNext = k; renderNow(); }}, 'Capisco l’80%, cambio'),
-        k==='tec' && cur.url ? el('a',{class:'ghost', href:cur.url, target:'_blank', rel:'noopener', style:'text-decoration:none'}, 'Apri in Apple Podcasts') : null));
+        ));
     }
     box.append(card);
   }
@@ -751,30 +774,28 @@ function renderNow(){
 let feed = null, report = null;
 const pickEp = name => pickEpIn(feed, name);
 function renderReport(){
-  const box = $('report'), on = report && report.date===TODAY && report.lines; box.hidden = !on; box.textContent = '';
+  const box = $('report'), on = report && report.date===TODAY; box.hidden = !on; box.textContent = '';
   if(!on) return;
-  const ul = el('ul',{}); report.lines.forEach(l => ul.append(el('li',{}, l)));
   box.onclick = openPiano;
-  box.append(el('div',{class:'eyebrow'}, 'Report del mattino · tocca per il piano'), el('h3',{}, report.title), ul);
+  box.append(el('div',{class:'eyebrow'}, 'Report del mattino · tocca per il piano'));
 }
-
 /* ---------- PIANO DI OGGI (si apre toccando la notifica o il report) ---------- */
 function openPiano(){
   const box = $('piano'); if(!state) return;
-  const p = todayPlan(), t = today(), sh = state.shifts && state.shifts[TODAY], tec = state.tec || {};
+  const p = todayPlan(), t = today(), sh = state.shifts && state.shifts[TODAY], tec = state.tec || {}, q = advanceEp(state.quo, 0);
   const nextName = nextTopic(tec.topic || TOPICS[TOPICS.length-1]), nextEp = pickEp(nextName), due = dueWords().length;
-  const lab = {sem:(state.sem && state.sem.label) || 'da scegliere', quo:quoLabel(state.quo) || 'da scegliere', tec:tec.label || 'scegli un episodio'};
+  const lab = {sem:(state.sem && state.sem.label) || 'da scegliere', quo:state.quo && state.quo.label ? state.quo.label+' · stagione '+q.s+', episodio '+q.e : 'da scegliere', tec:tec.label || 'scegli un episodio'};
   const sec = (title, ...kids) => el('section',{class:'card'}, el('div',{class:'eyebrow'}, title), ...kids);
   box.textContent = '';
   box.append(
-    el('div',{}, el('div',{class:'eyebrow'}, new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})),
+    el('div',{class:'head'}, el('div',{}, el('div',{class:'eyebrow'}, new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})),
       el('h2',{}, p.kind+(sh ? ' '+sh+'-'+(sh+8) : '')), el('div',{class:'muted'}, p.target+'′ per tipo, '+p.target*3+'′ in tutto')),
+      el('button',{type:'button', class:'x', 'aria-label':'Chiudi', onclick:closePiano}, '×')),
     sec('Cosa ascoltare', el('dl',{}, ...K.flatMap(k => [el('dt',{}, NAMES[k]+' · '+t[k]+'/'+p.target+'′'), el('dd',{}, lab[k])]))),
     sec('Dove e quando', el('dl',{}, ...p.rows.flatMap(([a,b]) => [el('dt',{}, a), el('dd',{}, b)]))),
     sec('Dopo, e il ripasso', el('dl',{},
       el('dt',{}, 'Dopo l’80% del tecnico'), el('dd',{}, nextEp ? epLabel(nextName, nextEp) : nextName),
-      el('dt',{}, 'Ripasso parole'), el('dd',{}, due ? due+(due===1 ? ' carta da ripassare' : ' carte da ripassare') : 'Niente da ripassare'))),
-    el('button',{type:'button', class:'btn', onclick:closePiano}, 'Chiudi'));
+      ...(due ? [el('dt',{}, 'Ripasso parole'), el('dd',{}, due+(due===1 ? ' carta da ripassare' : ' carte da ripassare'))] : []))));
   box.hidden = false; box.scrollTop = 0;
 }
 function closePiano(){ $('piano').hidden = true; if(location.hash==='#piano') history.replaceState(null,'',location.pathname); }
@@ -843,8 +864,8 @@ function renderQuiz(){
   const box = $('quiz'); box.textContent = '';
   const ws = wordsOf(), due = dueWords(), noTr = ws.filter(w => !w.t && !w.got).length;
   const doneToday = ((state && state.revDays) || []).includes(TODAY);
-  $('revlink').hidden = !due.length && !doneToday;
-  $('revtext').textContent = due.length ? 'Ripasso parole: '+due.length+(due.length===1?' carta':' carte')+' da fare' : 'Ripasso parole di oggi fatto';
+  $('revlink').hidden = !due.length;
+  $('revtext').textContent = due.length ? 'Ripasso parole: '+due.length+(due.length===1?' carta':' carte')+' da fare' : '';
   box.append(el('div',{class:'eyebrow'}, 'Ripasso di oggi'));
   if(quiz && !ws.some(x => x.id===quiz.queue[0])){ quiz.queue.shift(); if(!quiz.queue.length) quiz = null; return renderQuiz(); }
   if(!quiz){
