@@ -79,6 +79,16 @@ function streakOf(days, today){
   return {streak:run, best, bank, used};
 }
 
+// Semplificato a blocchi: «Peppa Pig, stagione 1, episodi 4-6 (~15′)». Il blocco si legge dal testo, così se lo correggi a mano il prossimo riparte da lì.
+// Il blocco cambia solo quando chiudi all'80%, non con i minuti: il Semplificato si ripete finché non lo capisci.
+const BLOCK_RE = /^(.*?),\s*stagione\s+(\d+),\s*episodi\s+(\d+)\s*[-–]\s*(\d+)\s*(\(~\s*\d+\s*′?\))?\s*$/i;
+function nextBlockLabel(label){
+  const l = (label || '').trim(), m = BLOCK_RE.exec(l);
+  if(m){ const a = +m[3], b = +m[4], n = b - a + 1; if(n >= 1) return m[1]+', stagione '+m[2]+', episodi '+(b+1)+'-'+(b+n)+(m[5] ? ' '+m[5] : ''); }
+  const name = (l.split(/\s·|[,(]/)[0] || '').trim();
+  return name ? name+', stagione 1, episodi 1-3' : '';      // prima volta: un punto di partenza da correggere
+}
+
 // Ritmo: minuti di questa settimana (da lunedì a ieri) contro gli stessi giorni della settimana scorsa. Oggi non conta: non è finito.
 // Niente da mostrare di lunedì (nessun giorno finito) né se la settimana scorsa è vuota.
 function paceOf(days, today){
@@ -145,4 +155,4 @@ function achieve(days, state, today, goalToday){
   return {vals, earned, week: weekMissions(cur), weekGold: gold(cur)};
 }
 
-if(typeof module!=='undefined') module.exports = {minsOf, streakOf, EP_LEN, advanceEp, paceOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};
+if(typeof module!=='undefined') module.exports = {minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};

@@ -944,7 +944,7 @@ function renderNow(){
       }
       if(openNext===k){
         const sug = k==='tec' && pickEp(nextTopic(cur.topic));      // propone l'episodio più recente del podcast dopo
-        const nin = el('input',{type:'text', id:'next-'+k, value: sug ? epLabel(nextTopic(cur.topic), sug) : '', placeholder:'prossimo spezzone', 'aria-label':'Prossimo spezzone '+NAMES[k]});
+        const nin = el('input',{type:'text', id:'next-'+k, value: sug ? epLabel(nextTopic(cur.topic), sug) : (k==='sem' ? nextBlockLabel(cur.label) : ''), placeholder:'prossimo spezzone', 'aria-label':'Prossimo spezzone '+NAMES[k]});
         card.append(el('form',{class:'next-form', onsubmit:e=>{
           e.preventDefault();
           const label = nin.value.trim(); if(!label){ nin.focus(); return; }
@@ -953,7 +953,7 @@ function renderNow(){
           openNext = null;
           saveState({[k]: Object.assign({}, cur, {label, since: TODAY, comp: []}, k==='tec' ? {topic: nextTopic(cur.topic), url: sug && label===epLabel(nextTopic(cur.topic), sug) ? sug.url || null : null} : {}), history: hist}, '80% '+NAMES[k]+': '+(cur.label||'')+' → '+label);
           confetti(); toast('Spezzone chiuso all’80%. Avanti col prossimo.');
-        }}, el('span',{class:'hint'}, 'Hai capito l’80% di “'+(cur.label||'questo spezzone')+'”. '+(k==='tec' ? 'Tocca a '+nextTopic(cur.topic)+': scrivi quale episodio prendi.' : 'Con cosa vai avanti?')), nin,
+        }}, el('span',{class:'hint'}, 'Hai capito l’80% di “'+(cur.label||'questo spezzone')+'”. '+(k==='tec' ? 'Tocca a '+nextTopic(cur.topic)+': scrivi quale episodio prendi.' : k==='sem' ? 'Ecco il prossimo blocco: correggilo se serve.' : 'Con cosa vai avanti?')), nin,
           el('div',{class:'row'}, el('button',{type:'submit', class:'btn solid'}, 'Passo a questo'), el('button',{type:'button', class:'ghost', onclick:()=>{ openNext = null; renderNow(); }}, 'Annulla'))));
         setTimeout(() => nin.focus(), 0);
       }

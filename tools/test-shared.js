@@ -84,4 +84,13 @@ assert.equal(S.paceOf({'2026-11-09': pd['2026-11-09']}, '2026-11-11'), null);   
 assert.equal(S.paceOf(undefined, '2026-11-11'), null);
 assert.equal(S.paceOf(pd, '2026-11-16'), null);                                  // lunedì dopo: riparte da zero
 
+// nextBlockLabel: il Semplificato avanza di un blocco alla volta, leggendo il testo
+assert.equal(S.nextBlockLabel('Peppa Pig, stagione 1, episodi 1-3 (~15′)'), 'Peppa Pig, stagione 1, episodi 4-6 (~15′)');
+assert.equal(S.nextBlockLabel('Peppa Pig, stagione 2, episodi 10–12'), 'Peppa Pig, stagione 2, episodi 13-15');          // trattino lungo, senza durata
+assert.equal(S.nextBlockLabel('Peppa Pig, stagione 1, episodi 5-5 (~5′)'), 'Peppa Pig, stagione 1, episodi 6-6 (~5′)');   // blocco da uno
+assert.equal(S.nextBlockLabel('Peppa Pig (~5′)'), 'Peppa Pig, stagione 1, episodi 1-3');                                   // testo libero: punto di partenza
+assert.equal(S.nextBlockLabel('Peppa Pig, stagione 1, episodi 6-4'), 'Peppa Pig, stagione 1, episodi 1-3');          // blocco impossibile: si riparte dal punto di partenza
+assert.equal(S.nextBlockLabel(''), '');
+assert.equal(S.nextBlockLabel(undefined), '');
+
 console.log('shared.js: tutto a posto');
