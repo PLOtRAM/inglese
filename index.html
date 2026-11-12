@@ -335,6 +335,10 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .sheetbox{width:100%;max-width:560px;display:grid;gap:12px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:var(--r-l) var(--r-l) 0 0}
 .sheethead{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .sheet .warn{color:var(--warn);font-weight:700}
+.whatsnew,.whatsnew ul{margin:0;padding-left:18px}
+.whatsnew{padding-left:0;list-style:none;display:grid;gap:10px}
+.whatsnew>li>b{font-family:var(--f-mono);font-size:.82rem;color:var(--muted)}
+.whatsnew ul{display:grid;gap:3px;font-size:.92rem;margin-top:2px}
 .sheet.kb{padding:0 8px 8px}
 .sheet.kb .sheetbox{border-radius:var(--r-l);border-bottom:1px solid var(--line);padding-bottom:16px}
 .sheet .x{flex:none;width:36px;height:36px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:1.2rem;line-height:1}
@@ -565,6 +569,8 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <h2 id="h-app">App</h2>
       <p class="hint">Versione <b id="appver"></b>. Se non vedi le novità appena pubblicate, tocca qui sotto: scarica di nuovo i file dell’app. I tuoi dati e le notifiche restano.</p>
       <div class="row"><button type="button" class="btn" id="updbtn">Aggiorna l’app</button></div>
+      <h3 class="sub-h">Novità</h3>
+      <ul class="whatsnew" id="whatsnew"></ul>
     </section>
 
     <details class="fold">
@@ -1379,8 +1385,15 @@ addEventListener('resize', () => go(curView, false));
 /* ---------- collegamento e notifiche ---------- */
 $('nosave').onclick = () => go('guida');
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.12-8';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.12-9';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+// Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
+const NOVITA = [
+  ['2026.11.12-9', ['Parola al volo dal tasto Azione: crea un Comando Rapido che apre «…/inglese/#parola».', 'Nella notifica della sera, la settimana d’oro e (la domenica) il livello.', 'Qui in Guida vedi cosa è cambiato a ogni aggiornamento.']],
+  ['2026.11.12-8', ['Avviso se un podcast non si aggiorna.', 'Nel piano del giorno, il confronto con la settimana scorsa.', 'Semplificato a blocchi di episodi: all’80% propone il blocco dopo.', 'Colori del tema chiaro più leggibili.']],
+  ['2026.11.12-7', ['Il riquadro della parola sta sopra la tastiera.', '«Quanto hai capito?» è uguale su tutte le card; toccando di nuovo il valore lo togli.']],
+];
 $('appver').textContent = APP_VERSION;
+NOVITA.slice(0, 3).forEach(([v, frasi]) => $('whatsnew').append(el('li',{}, el('b',{}, v), el('ul',{}, ...frasi.map(f => el('li',{}, f))))));
 $('updbtn').onclick = async () => {
   const b = $('updbtn'); b.disabled = true; b.textContent = 'Aggiorno…';
   try{
