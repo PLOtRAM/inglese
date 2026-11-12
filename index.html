@@ -116,6 +116,10 @@ input[type=text],input[type=search],input[type=password]{font:inherit;font-size:
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chips button{border:1px solid var(--line);background:transparent;border-radius:99px;padding:5px 11px;font-size:.85rem;color:var(--muted)}
 .chips button[aria-pressed=true]{background:var(--fg);border-color:var(--fg);color:var(--bg);font-weight:700}
+.comp{display:grid;gap:6px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:34px;border-bottom:1px solid var(--line);background:linear-gradient(to top,transparent 80%,var(--line) 80%,var(--line) calc(80% + 1px),transparent calc(80% + 1px))}
+.bars i{flex:1;max-width:18px;background:var(--accent);border-radius:3px 3px 0 0;opacity:.55}
+.bars i.ok{opacity:1}
 .next-form{display:grid;gap:8px}
 
 /* scaletta */
@@ -722,7 +726,7 @@ function renderNow(){
       inp.value = cur.label || '';
       inp.oninput = () => fit(inp);
       inp.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } };
-      inp.onchange = () => { editK = null; saveState({[k]: Object.assign({}, cur, {label: inp.value.trim(), since: cur.since || TODAY}, k==='tec' ? {url:null} : {})}, 'spezzone '+NAMES[k]+': '+inp.value.trim()); };
+      inp.onchange = () => { editK = null; saveState({[k]: Object.assign({}, cur, {label: inp.value.trim(), since: cur.since || TODAY, comp: inp.value.trim()===(cur.label||'') ? cur.comp : []}, k==='tec' ? {url:null} : {})}, 'spezzone '+NAMES[k]+': '+inp.value.trim()); };
       inp.onblur = () => { if(editK===k){ editK = null; renderNow(); } };
       card.append(inp); setTimeout(() => { inp.focus(); fit(inp); }, 0);
     } else {
@@ -750,6 +754,21 @@ function renderNow(){
       card.append(tp);
     }
     if(k!=='quo'){
+      if(cur.label && openNext!==k){
+        // comprensione stimata a ogni riascolto: la curva dice quando si arriva all'80%
+        const cp = cur.comp || [], lastP = cp.length && cp[cp.length-1].d===TODAY ? cp[cp.length-1].p : null;
+        const setComp = pc => {
+          const a = cp.slice(-19); if(a.length && a[a.length-1].d===TODAY) a.pop();
+          a.push({d:TODAY, p:pc}); if(pc>=80) openNext = k;
+          saveState({[k]: Object.assign({}, cur, {comp:a})}, NAMES[k]+': capito '+pc+'%');
+        };
+        const ch = el('div',{class:'chips', role:'group', 'aria-label':'Quanto hai capito'});
+        [20,40,60,80,100].forEach(pc => ch.append(el('button',{type:'button','aria-pressed':String(lastP===pc), onclick:()=>setComp(pc)}, pc+'%')));
+        card.append(el('div',{class:'comp'},
+          el('div',{class:'hint'}, cp.length ? 'Capito finora: '+cp.map(c => c.p+'%').join(' → ') : 'Quanto hai capito all’ultimo ascolto?'),
+          cp.length ? el('div',{class:'bars','aria-hidden':'true'}, ...cp.map(c => el('i',{class: c.p>=80 ? 'ok' : null, style:'height:'+c.p+'%'}))) : null,
+          ch));
+      }
       if(openNext===k){
         const sug = k==='tec' && pickEp(nextTopic(cur.topic));      // propone l'episodio più recente del podcast dopo
         const nin = el('input',{type:'text', id:'next-'+k, value: sug ? epLabel(nextTopic(cur.topic), sug) : '', placeholder:'prossimo spezzone', 'aria-label':'Prossimo spezzone '+NAMES[k]});
@@ -757,9 +776,9 @@ function renderNow(){
           e.preventDefault();
           const label = nin.value.trim(); if(!label){ nin.focus(); return; }
           const hist = (state.history||[]).slice(-99);
-          hist.push({type:k, label:cur.label||'', topic:cur.topic||null, from:cur.since||TODAY, to:TODAY});
+          hist.push({type:k, label:cur.label||'', topic:cur.topic||null, from:cur.since||TODAY, to:TODAY, comp:cur.comp||[]});
           openNext = null;
-          saveState({[k]: Object.assign({}, cur, {label, since: TODAY}, k==='tec' ? {topic: nextTopic(cur.topic), url: sug && label===epLabel(nextTopic(cur.topic), sug) ? sug.url || null : null} : {}), history: hist}, '80% '+NAMES[k]+': '+(cur.label||'')+' → '+label);
+          saveState({[k]: Object.assign({}, cur, {label, since: TODAY, comp: []}, k==='tec' ? {topic: nextTopic(cur.topic), url: sug && label===epLabel(nextTopic(cur.topic), sug) ? sug.url || null : null} : {}), history: hist}, '80% '+NAMES[k]+': '+(cur.label||'')+' → '+label);
           confetti(); toast('Spezzone chiuso all’80%. Avanti col prossimo.');
         }}, el('span',{class:'hint'}, 'Hai capito l’80% di “'+(cur.label||'questo spezzone')+'”. '+(k==='tec' ? 'Tocca a '+nextTopic(cur.topic)+': scrivi quale episodio prendi.' : 'Con cosa vai avanti?')), nin,
           el('div',{class:'row'}, el('button',{type:'submit', class:'btn solid'}, 'Passo a questo'), el('button',{type:'button', class:'ghost', onclick:()=>{ openNext = null; renderNow(); }}, 'Annulla'))));
