@@ -334,6 +334,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .sheet{position:fixed;inset:0;z-index:55;background:rgb(0 0 0/.5);display:flex;align-items:flex-end;justify-content:center}
 .sheetbox{width:100%;max-width:560px;display:grid;gap:12px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:var(--r-l) var(--r-l) 0 0}
 .sheethead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet .warn{color:var(--warn);font-weight:700}
 .sheet.kb{padding:0 8px 8px}
 .sheet.kb .sheetbox{border-radius:var(--r-l);border-bottom:1px solid var(--line);padding-bottom:16px}
 .sheet .x{flex:none;width:36px;height:36px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:1.2rem;line-height:1}
@@ -699,6 +700,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
     <div class="sheethead"><h2 id="sheet-t">Parola sentita adesso</h2><button type="button" class="x" id="sheet-x" aria-label="Chiudi">×</button></div>
     <input type="text" id="q-word" placeholder="es. mortgage" autocomplete="off" autocapitalize="off" aria-label="Parola sentita adesso">
     <p class="hint">La traduzione la aggiungi dopo, dalla scheda Parole.</p>
+    <p class="hint warn" id="sheet-msg" hidden></p>
     <button type="submit" class="btn solid" id="q-save">Aggiungi parola</button>
   </form>
 </div>
@@ -761,8 +763,10 @@ async function push(){
       const cur = await getFile('data.json');
       if(cur){
         const last = ((cur.data.log || []).slice(-1)[0] || {}).t || '';
+        const mie = ((state && state.words) || []).filter(w => w.date===TODAY);                 // parole segnate oggi su questo dispositivo
         sha = cur.sha; days = Object.assign({}, cur.data.days, days[TODAY] ? {[TODAY]: days[TODAY]} : {});
-        state = cur.data.state || state;      // shortcut: sullo stato vince chi ha scritto prima, i minuti di oggi restano i miei; unire campo per campo se i dispositivi diventano più di due
+        state = cur.data.state || state;
+        if(mie.length){ const ids = new Set(((state && state.words) || []).map(w => w.id)); state = Object.assign({}, state, {words: ((state && state.words) || []).concat(mie.filter(w => !ids.has(w.id)))}); }      // shortcut: sullo stato vince chi ha scritto prima, i minuti di oggi restano i miei; unire campo per campo se i dispositivi diventano più di due
         log = (cur.data.log || []).concat(log.filter(x => x.t > last)).slice(-500);
         renderAll(); toast('Dati aggiornati da un altro dispositivo: controlla l’ultima modifica.');
       }
@@ -1184,13 +1188,15 @@ const fitSheet = () => {
   sheet.classList.toggle('kb', vv.height < window.innerHeight - 120);                           // tastiera aperta: scheda staccata dal fondo, tutta visibile
 };
 if(vv){ vv.addEventListener('resize', fitSheet); vv.addEventListener('scroll', fitSheet); }
-const openSheet = () => { sheet.hidden = false; fitSheet(); $('q-word').focus(); [100, 350, 700].forEach(t => setTimeout(fitSheet, t)); };
+const openSheet = () => { $('sheet-msg').hidden = true; sheet.hidden = false; fitSheet(); $('q-word').focus(); [100, 350, 700].forEach(t => setTimeout(fitSheet, t)); };
 const closeSheet = () => { sheet.hidden = true; sheet.classList.remove('kb'); sheet.style.top = ''; sheet.style.height = ''; $('q-word').value = ''; if(document.activeElement) document.activeElement.blur(); [0, 80, 350].forEach(t => setTimeout(() => window.scrollTo(0, 0), t)); };
 $('fab').onclick = openSheet; $('sheet-x').onclick = closeSheet;
 sheet.onclick = e => { if(e.target===sheet) closeSheet(); };
 document.addEventListener('keydown', e => { if(e.key==='Escape' && !sheet.hidden) closeSheet(); });
 $('qform').onsubmit = e => {
   e.preventDefault(); const w = $('q-word').value.trim(); if(!w) return $('q-word').focus();
+  // senza la chiave la parola resterebbe solo in questa copia (per esempio se il link si apre in Safari invece che dall'icona nella Home): meglio dirlo che perderla
+  if(!token){ const m = $('sheet-msg'); m.textContent = 'Questa copia dell’app non è collegata ai tuoi dati: la parola non verrebbe salvata. Aprila dall’icona nella Home.'; m.hidden = false; return; }
   saveState({words: wordsOf().slice(-499).concat({id: Date.now().toString(36), w, t:'', src: (state && state.tec && state.tec.topic) || '', date: TODAY, got:false})}, 'parola al volo: '+w);
   closeSheet(); toast('Parola aggiunta: '+w);
 };
@@ -1366,7 +1372,8 @@ dock.addEventListener('pointermove', e => {
 const endDrag = e => { if(!drag) return; drag = null; const i = Math.round(tabAt(e.clientX)); pager.style.scrollSnapType = ''; go(VIEWS[i]); };
 dock.addEventListener('pointerup', endDrag); dock.addEventListener('pointercancel', endDrag);
 tabs.forEach((a,i) => a.addEventListener('click', e => { e.preventDefault(); go(VIEWS[i]); }));
-addEventListener('hashchange', () => { const v = location.hash.slice(1); if(VIEWS.includes(v) && v!==curView) go(v); });
+const parolaDaLink = () => { if(location.hash!=='#parola') return false; history.replaceState(null,'',location.pathname); openSheet(); return true; };     // per il Comando Rapido / tasto Azione
+addEventListener('hashchange', () => { if(parolaDaLink()) return; const v = location.hash.slice(1); if(VIEWS.includes(v) && v!==curView) go(v); });
 addEventListener('resize', () => go(curView, false));
 
 /* ---------- collegamento e notifiche ---------- */
@@ -1423,7 +1430,7 @@ try{ const c = JSON.parse(ls.get('cache') || 'null'); if(c){ days = c.days || {}
 if(!state && !token) state = {};
 $('date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 renderAll();
-if(location.hash==='#piano') openPiano(); else if(location.hash==='#turno') openTurno();
+if(location.hash==='#piano') openPiano(); else if(location.hash==='#turno') openTurno(); else parolaDaLink();
 if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if(e.data==='piano') openPiano(); else if(e.data==='turno') openTurno(); });
 if(VIEWS.includes(location.hash.slice(1))) requestAnimationFrame(() => go(location.hash.slice(1), false));
 if(token) sync(); else setStatus('Dati non collegati: tocca qui e inserisci la chiave.');
