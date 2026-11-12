@@ -859,7 +859,8 @@ function renderPlan(){
   // tengo solo oggi e domani, così i turni vecchi non si accumulano
   [[TODAY,'Oggi'],[tom,'Domani']].forEach(([d,l]) => [6,7].forEach(h => sb.append(el('button',{type:'button','aria-pressed':String(sh[d]===h), onclick:()=>saveState({shifts:{[TODAY]:sh[TODAY], [tom]:sh[tom], [d]: sh[d]===h ? null : h}}, 'turno '+l.toLowerCase()+': '+(sh[d]===h ? 'tolto' : h+'-'+(h+8)))}, l+' '+h+'-'+(h+8)))));
   const h = sh[TODAY];
-  $('setupsum').textContent = (type ? WEEKS[type] : 'da scegliere')+' · '+(h ? 'turno '+h+'-'+(h+8) : 'turno non scelto');
+  const ht = sh[tom], tt = x => x ? x+'-'+(x+8) : '—';
+  $('setupsum').textContent = (type ? WEEKS[type] : 'settimana da scegliere')+' · oggi '+tt(h)+' · domani '+tt(ht);
   if(!type && !h) $('setup').open = true;
   const when = h ? {'Andata al lavoro':'Andata al lavoro, prima delle '+h, 'Prime ore del turno':'Prime ore del turno, dalle '+h, 'Dalle 13':'Dalle 13 alle '+(h+8), 'Ritorno a casa':'Ritorno a casa, dopo le '+(h+8)} : {};
   todayPlan().rows.forEach(r => plan.append(el('div',{class:'step'}, el('span',{class:'when'}, when[r[0]] || r[0]), el('span',{class:'what'}, r[1]))));
@@ -981,6 +982,12 @@ function openPiano(){
       el('dt',{}, 'Dopo l’80% del tecnico'), el('dd',{}, nextEp ? epLabel(nextName, nextEp) : nextName),
       ...(due ? [el('dt',{}, 'Ripasso parole'), el('dd',{}, due+(due===1 ? ' carta da ripassare' : ' carte da ripassare'))] : []))));
   box.hidden = false; box.scrollTop = 0;
+}
+function openTurno(){      // dalla notifica della sera: Oggi, con aperta la scelta di settimana e turno
+  go('oggi', false); const d = $('setup'); d.open = true;
+  const show = () => d.scrollIntoView({block:'center'});     // due volte: la pagina cambia altezza quando arrivano i caratteri
+  show(); [150, 600, 1500].forEach(t => setTimeout(show, t)); if(document.fonts) document.fonts.ready.then(() => setTimeout(show, 50));
+  history.replaceState(null,'',location.pathname);
 }
 function closePiano(){ $('piano').hidden = true; if(location.hash==='#piano') history.replaceState(null,'',location.pathname); }
 function renderFeed(){
@@ -1381,8 +1388,8 @@ try{ const c = JSON.parse(ls.get('cache') || 'null'); if(c){ days = c.days || {}
 if(!state && !token) state = {};
 $('date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 renderAll();
-if(location.hash==='#piano') openPiano();
-if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if(e.data==='piano') openPiano(); });
+if(location.hash==='#piano') openPiano(); else if(location.hash==='#turno') openTurno();
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if(e.data==='piano') openPiano(); else if(e.data==='turno') openTurno(); });
 if(VIEWS.includes(location.hash.slice(1))) requestAnimationFrame(() => go(location.hash.slice(1), false));
 if(token) sync(); else setStatus('Dati non collegati: tocca qui e inserisci la chiave.');
 document.addEventListener('visibilitychange', () => { if(document.hidden) return; if(ymd(new Date())!==TODAY) location.reload(); else sync(); });

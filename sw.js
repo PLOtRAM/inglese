@@ -16,9 +16,10 @@ self.addEventListener('fetch', e => {
 
 self.addEventListener('push', e => {
   let d = {}; try{ d = e.data.json(); }catch(_){ d = {title:'Inglese', body: e.data ? e.data.text() : ''}; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Inglese', {body: d.body || '', icon:'icon-192.png', badge:'icon-192.png', tag:'report'}));
+  e.waitUntil(self.registration.showNotification(d.title || 'Inglese', {body: d.body || '', icon:'icon-192.png', badge:'icon-192.png', tag:'report', data:{url: d.url || './#piano'}}));
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(self.clients.matchAll({type:'window'}).then(cs => cs.length ? cs[0].focus().then(c => c.postMessage('piano')) : self.clients.openWindow('./#piano')));
+  const url = (e.notification.data && e.notification.data.url) || './#piano';     // './#piano' = piano del giorno, './#turno' = scelta del turno
+  e.waitUntil(self.clients.matchAll({type:'window'}).then(cs => cs.length ? cs[0].focus().then(c => c.postMessage(url.split('#')[1] || 'piano')) : self.clients.openWindow(url)));
 });
