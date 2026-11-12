@@ -19,5 +19,5 @@ self.addEventListener('push', e => {
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(self.clients.matchAll({type:'window'}).then(cs => cs.length ? cs[0].focus() : self.clients.openWindow('./')));
+  e.waitUntil(self.clients.matchAll({type:'window'}).then(cs => cs.length ? cs[0].focus().then(c => c.postMessage('piano')) : self.clients.openWindow('./#piano')));
 });

@@ -170,7 +170,14 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .pod.first{border-color:var(--tec)}
 .pod b{overflow-wrap:anywhere}
 
-#report{gap:8px;border-color:color-mix(in srgb,var(--tec) 45%,var(--line))}
+#piano{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));display:grid;gap:12px;align-content:start}
+#piano[hidden]{display:none}
+#piano .muted{color:var(--muted)}
+#piano h2{margin:0;font-size:1.4rem}
+#piano dl{margin:0;display:grid;gap:10px}
+#piano dt{font-weight:700}
+#piano dd{margin:0;color:var(--muted)}
+#report{cursor:pointer;gap:8px;border-color:color-mix(in srgb,var(--tec) 45%,var(--line))}
 #report ul{margin:0;padding-left:18px;display:grid;gap:4px}
 
 .ep{font-size:.9rem;color:var(--accent)}
@@ -244,6 +251,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
     </div>
   </header>
     <button type="button" class="banner" id="nosave" hidden></button>
+    <section id="piano" hidden aria-label="Piano di oggi"></section>
     <section class="card" id="report" aria-label="Report del mattino" hidden></section>
     <section class="card" aria-labelledby="h-goal">
       <div class="goalrow">
@@ -746,8 +754,30 @@ function renderReport(){
   const box = $('report'), on = report && report.date===TODAY && report.lines; box.hidden = !on; box.textContent = '';
   if(!on) return;
   const ul = el('ul',{}); report.lines.forEach(l => ul.append(el('li',{}, l)));
-  box.append(el('div',{class:'eyebrow'}, 'Report del mattino'), el('h3',{}, report.title), ul);
+  box.onclick = openPiano;
+  box.append(el('div',{class:'eyebrow'}, 'Report del mattino · tocca per il piano'), el('h3',{}, report.title), ul);
 }
+
+/* ---------- PIANO DI OGGI (si apre toccando la notifica o il report) ---------- */
+function openPiano(){
+  const box = $('piano'); if(!state) return;
+  const p = todayPlan(), t = today(), sh = state.shifts && state.shifts[TODAY], tec = state.tec || {};
+  const nextName = nextTopic(tec.topic || TOPICS[TOPICS.length-1]), nextEp = pickEp(nextName), due = dueWords().length;
+  const lab = {sem:(state.sem && state.sem.label) || 'da scegliere', quo:quoLabel(state.quo) || 'da scegliere', tec:tec.label || 'scegli un episodio'};
+  const sec = (title, ...kids) => el('section',{class:'card'}, el('div',{class:'eyebrow'}, title), ...kids);
+  box.textContent = '';
+  box.append(
+    el('div',{}, el('div',{class:'eyebrow'}, new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})),
+      el('h2',{}, p.kind+(sh ? ' '+sh+'-'+(sh+8) : '')), el('div',{class:'muted'}, p.target+'′ per tipo, '+p.target*3+'′ in tutto')),
+    sec('Cosa ascoltare', el('dl',{}, ...K.flatMap(k => [el('dt',{}, NAMES[k]+' · '+t[k]+'/'+p.target+'′'), el('dd',{}, lab[k])]))),
+    sec('Dove e quando', el('dl',{}, ...p.rows.flatMap(([a,b]) => [el('dt',{}, a), el('dd',{}, b)]))),
+    sec('Dopo, e il ripasso', el('dl',{},
+      el('dt',{}, 'Dopo l’80% del tecnico'), el('dd',{}, nextEp ? epLabel(nextName, nextEp) : nextName),
+      el('dt',{}, 'Ripasso parole'), el('dd',{}, due ? due+(due===1 ? ' carta da ripassare' : ' carte da ripassare') : 'Niente da ripassare'))),
+    el('button',{type:'button', class:'btn', onclick:closePiano}, 'Chiudi'));
+  box.hidden = false; box.scrollTop = 0;
+}
+function closePiano(){ $('piano').hidden = true; if(location.hash==='#piano') history.replaceState(null,'',location.pathname); }
 function renderFeed(){
   const box = $('pods'); box.textContent = '';
   if(!feed || !feed.pods){ box.append(el('li',{class:'empty'}, 'Qui compaiono i titoli dei prossimi episodi, appena arrivano.')); $('podsnote').textContent = ''; return; }
@@ -1075,6 +1105,8 @@ try{ const c = JSON.parse(ls.get('cache') || 'null'); if(c){ days = c.days || {}
 if(!state && !token) state = {};
 $('date').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 renderAll();
+if(location.hash==='#piano') openPiano();
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if(e.data==='piano') openPiano(); });
 if(VIEWS.includes(location.hash.slice(1))) requestAnimationFrame(() => go(location.hash.slice(1), false));
 if(token) sync(); else setStatus('Dati non collegati: tocca qui e inserisci la chiave.');
 document.addEventListener('visibilitychange', () => { if(document.hidden) return; if(ymd(new Date())!==TODAY) location.reload(); else sync(); });
