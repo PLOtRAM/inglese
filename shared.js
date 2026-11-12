@@ -79,6 +79,18 @@ function streakOf(days, today){
   return {streak:run, best, bank, used};
 }
 
+// Ritmo: minuti di questa settimana (da lunedì a ieri) contro gli stessi giorni della settimana scorsa. Oggi non conta: non è finito.
+// Niente da mostrare di lunedì (nessun giorno finito) né se la settimana scorsa è vuota.
+function paceOf(days, today){
+  const t = new Date(today + 'T12:00'), dow = (t.getDay() + 6) % 7, mon = mondayOf(t);          // dow: 0 = lunedì
+  if(dow === 0) return null;
+  const add = (d, n) => { const x = new Date(d + 'T12:00'); x.setDate(x.getDate() + n); return ymd(x); };
+  const tot = d => { const v = minsOf(days && days[d]); return v.sem + v.quo + v.tec; };
+  let cur = 0, prev = 0;
+  for(let i = 0; i < dow; i++){ cur += tot(add(mon, i)); prev += tot(add(mon, i - 7)); }
+  return prev ? {cur, prev, diff: cur - prev, days: dow} : null;
+}
+
 /* ---------- Percorsi, missioni e traguardi ----------
    Ogni percorso è una catena di tappe sulla stessa misura: si vede quella in corso, le altre si sbloccano in ordine.
    I due percorsi "meta" contano gli altri (quanti traguardi, su quanti fronti). Tutto si calcola da giorni e stato: niente da tenere in più. */
@@ -133,4 +145,4 @@ function achieve(days, state, today, goalToday){
   return {vals, earned, week: weekMissions(cur), weekGold: gold(cur)};
 }
 
-if(typeof module!=='undefined') module.exports = {minsOf, streakOf, EP_LEN, advanceEp, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};
+if(typeof module!=='undefined') module.exports = {minsOf, streakOf, EP_LEN, advanceEp, paceOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};

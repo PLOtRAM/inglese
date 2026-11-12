@@ -72,4 +72,16 @@ S.TRACKS.forEach(t => t.tiers.forEach((x, i) => { if(i) assert.ok(x[0] > t.tiers
 assert.ok(Math.max(...S.TRACKS.find(t => t.id==='parole').tiers.map(x => x[0])) < 500);
 assert.ok(Math.max(...S.TRACKS.find(t => t.id==='spezzoni').tiers.map(x => x[0])) <= 100);
 
+// paceOf: stessi giorni, settimana scorsa contro questa
+const pd = {};   // sett. scorsa: lun 30, mar 45; questa: lun 60, mar 30 (+ oggi, che non conta)
+pd['2026-11-02'] = {u:'min', sem:10, quo:10, tec:10}; pd['2026-11-03'] = {u:'min', sem:15, quo:15, tec:15};
+pd['2026-11-09'] = {u:'min', sem:20, quo:20, tec:20}; pd['2026-11-10'] = {u:'min', sem:10, quo:10, tec:10}; pd['2026-11-11'] = {u:'min', sem:99, quo:99, tec:99};
+assert.equal(S.paceOf(pd, '2026-11-09'), null);                                  // lunedì: nessun giorno finito
+let P = S.paceOf(pd, '2026-11-11');                                              // mercoledì: confronto lun+mar, mercoledì escluso
+assert.deepEqual([P.cur, P.prev, P.diff, P.days], [90, 75, 15, 2]);
+assert.equal(S.paceOf(pd, '2026-11-15').days, 6);                                // domenica: sei giorni finiti
+assert.equal(S.paceOf({'2026-11-09': pd['2026-11-09']}, '2026-11-11'), null);    // settimana scorsa vuota
+assert.equal(S.paceOf(undefined, '2026-11-11'), null);
+assert.equal(S.paceOf(pd, '2026-11-16'), null);                                  // lunedì dopo: riparte da zero
+
 console.log('shared.js: tutto a posto');

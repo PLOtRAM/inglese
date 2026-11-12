@@ -977,6 +977,7 @@ function renderReport(){
 /* ---------- PIANO DI OGGI (si apre toccando la notifica o il report) ---------- */
 function openPiano(){
   const box = $('piano'); if(!state) return;
+  const pace = paceOf(days, TODAY);
   const p = todayPlan(), t = today(), sh = state.shifts && state.shifts[TODAY], tec = state.tec || {}, q = advanceEp(state.quo, 0);
   const nextName = nextTopic(tec.topic || TOPICS[TOPICS.length-1]), nextEp = pickEp(nextName), due = dueWords().length;
   const lab = {sem:(state.sem && state.sem.label) || 'da scegliere', quo:state.quo && state.quo.label ? state.quo.label.replace(/\s*·\s*\(.*$/, '')+' · stagione '+q.s+', episodio '+q.e : 'da scegliere', tec:tec.label || 'scegli un episodio'};
@@ -984,7 +985,8 @@ function openPiano(){
   box.textContent = '';
   box.append(
     el('div',{class:'head'}, el('div',{}, el('div',{class:'eyebrow'}, new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})),
-      el('h2',{}, p.kind+(sh ? ' '+sh+'-'+(sh+8) : '')), el('div',{class:'muted'}, p.target+'′ per tipo, '+p.target*3+'′ in tutto')),
+      el('h2',{}, p.kind+(sh ? ' '+sh+'-'+(sh+8) : '')), el('div',{class:'muted'}, p.target+'′ per tipo, '+p.target*3+'′ in tutto'),
+      pace ? el('div',{class:'muted'}, 'Rispetto alla settimana scorsa, negli stessi giorni: '+(pace.diff>0 ? '+'+pace.diff+'′' : pace.diff<0 ? '−'+(-pace.diff)+'′' : 'in pari')) : null),
       el('button',{type:'button', class:'x', 'aria-label':'Chiudi', onclick:closePiano}, '×')),
     sec('Cosa ascoltare', el('dl',{}, ...K.flatMap(k => [el('dt',{}, NAMES[k]+' · '+t[k]+'/'+p.target+'′'), el('dd',{}, lab[k])]))),
     sec('Dove e quando', el('dl',{class:'plan'}, ...p.rows.flatMap(([a,b]) => [el('dt',{}, a), el('dd',{}, b)]))),
