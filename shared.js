@@ -12,19 +12,19 @@ const TRAIN = {dom:[2,4,5], sab:[3,4,5], post:[1,3,5]};   // giorni di allenamen
 // Obiettivo in minuti per tipo e scaletta di un giorno, dato il tipo di settimana
 function dayPlan(type, wd){
   const match = type==='sab' ? wd===6 : wd===0;
-  if(match) return {kind:'Partita', target:15, tec:'Nel viaggio verso il campo, o in pullman', tv:'Nell’ora dopo pranzo, o in pullman', rows:[
+  if(match) return {kind:'Partita', target:15, rows:[
     ['In casa','Tecnico nel viaggio verso il campo, Peppa Pig e The Office nell’ora dopo il pranzo'],
     ['In trasferta','Tutti e tre in pullman, con le cuffie']]};
-  if(type==='sab' && wd===0) return {kind:'Giorno libero', target:15, tec:'A casa', tv:'A casa', rows:[
-    ['A casa','15′ di Peppa Pig, 15′ di The Office, 15′ di tecnico']]};
-  if(TRAIN[type].includes(wd)) return {kind:'Turno e allenamento', target:45, tec:'In auto: lavoro e campo', tv:'Al turno: prime ore e dalle 13', rows:[
+  if(type==='sab' && wd===0) return {kind:'Giorno libero', target:30, rows:[
+    ['A casa','30′ di Peppa Pig, 30′ di The Office, 30′ di tecnico']]};
+  if(TRAIN[type].includes(wd)) return {kind:'Turno e allenamento', target:30, rows:[
     ['Andata al lavoro','Tecnico'],
-    ['Prime ore del turno','30′ di Peppa Pig, 30′ di The Office'],
+    ['Prime ore del turno','15′ di Peppa Pig, 15′ di The Office'],
     ['Dalle 13','15′ di Peppa Pig, 15′ di The Office'],
     ['Ritorno a casa','Tecnico'],
-    ['Viaggio al campo','Tecnico, fino a 45′ totali'],
+    ['Viaggio al campo','Tecnico, se ti mancano minuti ai 30′'],
     ['Ritorno dal campo','Libero: novità Bloomberg, se ti va']]};
-  return {kind:'Turno', target:30, tec:'In auto, andata e ritorno', tv:'Al turno: prime ore e dalle 13', rows:[
+  return {kind:'Turno', target:30, rows:[
     ['Andata al lavoro','Tecnico'],
     ['Prime ore del turno','15′ di Peppa Pig, 15′ di The Office'],
     ['Dalle 13','15′ di Peppa Pig, 15′ di The Office'],
@@ -124,11 +124,35 @@ const TRACKS = [
     tiers:[[3,'Primo ripasso'],[7,'Memoria allenata'],[14,'Due settimane di ripasso'],[30,'Un mese di ripasso'],[60,'Due mesi di ripasso'],[100,'Cento ripassi']]},
   {id:'settimane', name:'Settimane d’oro', unit:'settimane complete', col:'--gold', todo:'Completa tutte e 4 le missioni della settimana.',
     tiers:[[1,'Prima settimana d’oro'],[3,'Tre settimane d’oro'],[6,'Sei settimane d’oro'],[12,'Dodici settimane d’oro'],[26,'Mezz’anno d’oro']]},
+  {id:'piene', name:'Giornate piene', unit:'giornate piene', col:'--ok', todo:'Nello stesso giorno: minimo, obiettivo e una parola nuova.',
+    tiers:[[1,'Giornata piena'],[3,'Tripletta piena'],[7,'Settimana piena'],[15,'Quindici piene'],[30,'Un mese pieno'],[60,'Sessanta piene'],[100,'Cento piene']]},
+  {id:'punti', name:'Punti', unit:'punti', col:'--gold', todo:'Ogni missione del giorno dà punti; la giornata piena ne dà 20 in più.',
+    tiers:[[100,'Primi cento'],[300,'Trecento'],[750,'Settecentocinquanta'],[1500,'Millecinquecento'],[3000,'Tremila'],[6000,'Seimila']]},
   {id:'fronti', meta:true, name:'Tutti i fronti', unit:'percorsi iniziati', col:'--tec', todo:'Ottieni almeno un traguardo in ogni percorso.',
-    tiers:[[3,'Tre fronti'],[5,'Cinque fronti'],[7,'Tutti i fronti']]},
+    tiers:[[3,'Tre fronti'],[5,'Cinque fronti'],[7,'Sette fronti'],[9,'Tutti i fronti']]},
   {id:'collezione', meta:true, name:'Collezione', unit:'traguardi ottenuti', col:'--gold', todo:'Sblocca traguardi nei percorsi.',
-    tiers:[[5,'Collezionista'],[12,'Bacheca'],[20,'Vetrina'],[30,'Museo'],[40,'Hall of Fame']]},
+    tiers:[[5,'Collezionista'],[12,'Bacheca'],[20,'Vetrina'],[30,'Museo'],[40,'Hall of Fame'],[60,'Leggenda']]},
 ];
+/* ---------- Missioni del giorno ----------
+   Le prime tre (core) fanno la «giornata piena»; ripasso e comprensione sono bonus: danno punti ma non bloccano niente.
+   Tutto si calcola da giorni e stato, per qualunque data: niente da salvare. */
+const FULL_BONUS = 20;
+const DAY_QUESTS = [
+  {id:'min', name:'Minimo', hint:'15′ per tipo: la serie continua', pts:10, core:true},
+  {id:'obj', name:'Obiettivo', hint:'l’obiettivo del giorno in tutti e tre i tipi', pts:20, core:true},
+  {id:'par', name:'Parola nuova', hint:'segnane una con il pulsante +', pts:10, core:true},
+  {id:'rip', name:'Ripasso', hint:'finisci le carte da ripassare', pts:10},
+  {id:'cmp', name:'Comprensione', hint:'dì quanto hai capito di Semplificato o Tecnico', pts:5}];
+function dayQuests(days, state, date, goal){
+  const v = minsOf(days && days[date]), st = state || {};
+  const done = {min: K.every(k => v[k] >= 15), obj: K.every(k => v[k] >= goal),
+    par: (st.words || []).some(w => w.date === date), rip: (st.revDays || []).includes(date),
+    cmp: [st.sem, st.tec].concat(st.history || []).some(x => x && (x.comp || []).some(c => c.d === date))};
+  const items = DAY_QUESTS.map(q => Object.assign({done: done[q.id]}, q));
+  const full = items.every(q => !q.core || q.done);
+  return {items, full, pts: items.reduce((n, q) => n + (q.done ? q.pts : 0), 0) + (full ? FULL_BONUS : 0),
+    max: DAY_QUESTS.reduce((n, q) => n + q.pts, FULL_BONUS)};
+}
 const weekMissions = w => [
   {id:'min', name:'Giorni col minimo', unit:'giorni', one:'giorno', hint:'15′ per tipo', val:w.min, target:WEEK_GOALS.min},
   {id:'obj', name:'Giornate a obiettivo', unit:'giornate', one:'giornata', hint:'obiettivo del giorno in tutti e tre i tipi', val:w.obj, target:WEEK_GOALS.obj},
@@ -150,7 +174,12 @@ function achieve(days, state, today, goalToday){
   revs.forEach(d => { W(d).rip++; });
   const gold = w => w.min>=WEEK_GOALS.min && w.obj>=WEEK_GOALS.obj && w.par>=WEEK_GOALS.par && w.rip>=WEEK_GOALS.rip;
   const cur = weeks[wk(today)] || {min:0, obj:0, par:0, rip:0};
-  const vals = {serie: streakOf(days, today).best, obiettivo: perfect, spezzoni: hist.length, parole: ws.length,
+  // punti e giornate piene: ogni data in cui è successo qualcosa (minuti, parola, ripasso, stima di comprensione)
+  const dates = new Set([...Object.keys(days), ...ws.map(x => x.date), ...revs, today]);
+  [st.sem, st.tec].concat(hist).forEach(x => ((x && x.comp) || []).forEach(c => dates.add(c.d)));
+  let punti = 0, piene = 0;
+  dates.forEach(dt => { if(!dt) return; const q = dayQuests(days, st, dt, dt===today ? goalToday : ((days[dt] && days[dt].g) || 30)); punti += q.pts; if(q.full) piene++; });
+  const vals = {serie: streakOf(days, today).best, obiettivo: perfect, spezzoni: hist.length, parole: ws.length, punti, piene,
     imparate: ws.filter(x => x.got || x.ivl>=21).length, ripasso: new Set(revs).size, settimane: Object.values(weeks).filter(gold).length};
   const earned = []; let count = 0, started = 0;
   TRACKS.filter(t => !t.meta).forEach(t => { let n = 0; t.tiers.forEach(([need]) => { if(vals[t.id] >= need){ earned.push(t.id+':'+need); n++; } }); count += n; if(n) started++; });
@@ -159,4 +188,4 @@ function achieve(days, state, today, goalToday){
   return {vals, earned, week: weekMissions(cur), weekGold: gold(cur)};
 }
 
-if(typeof module!=='undefined') module.exports = {minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};
+if(typeof module!=='undefined') module.exports = {dayQuests, DAY_QUESTS, FULL_BONUS, minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};

@@ -94,8 +94,20 @@ input[type=text],input[type=search],input[type=password]{font:inherit;font-size:
 .seg{height:17px;border-radius:5px;border:0;padding:0;background:var(--surface2);transition:background .15s,transform .15s}
 .seg.on{background:var(--accent)}
 .seg.extra{background:color-mix(in srgb,var(--accent) 55%,var(--gold))}
-.seg.goal{position:relative}
-.seg.goal::after{content:"";position:absolute;left:-6px;right:-6px;top:-3px;border-top:2px dashed var(--muted)}
+.seg.goal,.seg.min{position:relative}
+.seg.goal::after,.seg.min::after{content:"";position:absolute;left:-6px;right:-6px;top:-3px;border-top:2px dashed var(--muted)}
+.seg.min::after{border-top-color:var(--gold)}
+button.pill{font:inherit;font-size:.85rem;font-weight:700;color:var(--fg);cursor:pointer}
+.dayq{display:grid;gap:10px}
+.dayq .dq-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dayq ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.dayq li{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center}
+.dayq .ck{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:.8rem;font-weight:800;color:var(--surface)}
+.dayq li.done .ck{background:var(--ok);border-color:var(--ok)}
+.dayq .pts{font-family:var(--f-mono);font-size:.82rem;color:var(--muted)}
+.dayq li.done .pts{color:var(--ok);font-weight:700}
+.dayq li.bonus .nm::after{content:" · bonus";font-weight:400;color:var(--muted);font-size:.8rem}
+.dayq .full{font-weight:700;color:var(--ok)}
 .seg:hover{transform:scaleX(1.06)}
 .ch-val{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:1.25rem;font-weight:700}
 .ch-val small{font-size:.8rem;color:var(--muted);font-weight:500}
@@ -112,7 +124,6 @@ input[type=text],input[type=search],input[type=password]{font:inherit;font-size:
 .track{display:grid;gap:8px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
 .track .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
 .tag{font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
-.where{font-size:.85rem;color:var(--muted)}
 .track input[type=text]{font-weight:700;font-size:1.02rem;background:transparent;border-color:transparent;padding:4px 6px;margin-left:-6px}
 .track input[type=text]:hover,.track input[type=text]:focus{background:var(--bg);border-color:var(--line)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -391,6 +402,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
     <div class="pills">
       <span class="pill fire" id="p-streak" title="Giorni di fila con almeno 15′ per tipo"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1c.4 2.4-1 3.4-2.2 4.9C4.700 7.300 4 8.500 4 10a4 4 0 0 0 8 0c0-1.300-.5-2.300-1.200-3.200-.2 1-.7 1.600-1.400 1.900C9.900 6.300 9.600 3.200 8 1z"/></svg><span id="streak">0 giorni</span></span>
       <span class="pill" id="p-level">Livello 1</span>
+      <button type="button" class="pill" id="p-jolly" aria-label="Jolly: tengono ferma la serie">🛡️ <span id="jolly">0</span> jolly</button>
     </div>
   </header>
     <button type="button" class="banner" id="nosave" hidden></button>
@@ -410,10 +422,12 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
         <summary>Come funziona</summary>
         <div>
           <p class="hint" id="goaltext"></p>
-          <p class="hint">Ogni tacca vale 5′. Tocca +5′ oppure direttamente la tacca a cui sei arrivato. La linea tratteggiata è l’obiettivo.</p>
+          <p class="hint">Ogni tacca vale 5′. Tocca +5′ oppure direttamente la tacca a cui sei arrivato. La linea dorata tratteggiata è il minimo di 15′ (con quello la serie continua); quella grigia compare quando superi l’obiettivo e ne segna il punto.</p>
         </div>
       </details>
     </section>
+
+    <section class="card dayq" id="dayq" aria-label="Missioni di oggi"></section>
 
     <section aria-labelledby="h-now" class="sec">
       <h2 id="h-now">Cosa metti su oggi</h2>
@@ -504,8 +518,6 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <div class="stat"><b id="s-perfect">0</b><span>giorni a obiettivo</span></div>
     </section>
 
-    <p class="hint" id="jolly"></p>
-
     <section class="card" aria-labelledby="h-mis">
       <div class="m-head"><h2 id="h-mis">Missioni della settimana</h2><span class="hint" id="mis-gold"></span></div>
       <div class="missions" id="missions"></div>
@@ -550,38 +562,6 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 
   <!-- GUIDA -->
   <section class="view" id="v-guida" aria-label="Guida">
-    <section class="card" aria-labelledby="h-set">
-      <h2 id="h-set">Collegamento</h2>
-      <p class="hint" id="set-status"></p>
-      <form class="row" id="tokform">
-        <input type="password" id="tok" placeholder="Chiave dell’archivio dati" autocomplete="off" aria-label="Chiave dell’archivio dati">
-        <button class="btn solid" type="submit">Collega</button>
-      </form>
-      <div class="row">
-        <button type="button" class="btn" id="pushbtn">Attiva la notifica del mattino</button>
-        <button type="button" class="ghost" id="syncbtn">Aggiorna adesso</button>
-      </div>
-      <p class="hint">Su iPhone la notifica funziona solo dall’app aggiunta alla schermata Home: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
-    </section>
-    <section class="card" aria-labelledby="h-theme">
-      <h2 id="h-theme">Aspetto</h2>
-      <div class="chips scale three" id="themes" role="group" aria-label="Tema dei colori" style="--accent:var(--fg)"></div>
-      <p class="hint">Automatico segue le impostazioni del telefono. Con Chiaro o Scuro l’app resta sempre così.</p>
-    </section>
-
-    <section class="card" aria-labelledby="h-app">
-      <h2 id="h-app">App</h2>
-      <p class="hint">Versione <b id="appver"></b>. Se non vedi le novità appena pubblicate, tocca qui sotto: scarica di nuovo i file dell’app. I tuoi dati e le notifiche restano.</p>
-      <div class="row"><button type="button" class="btn" id="updbtn">Aggiorna l’app</button></div>
-      <h3 class="sub-h">Novità</h3>
-      <ul class="whatsnew" id="whatsnew"></ul>
-    </section>
-
-    <details class="fold">
-      <summary>Cronologia</summary>
-      <div><p class="hint">Le ultime azioni fatte nell’app, dalla più recente.</p><ul id="loglist"></ul></div>
-    </details>
-
     <section style="display:grid;gap:10px" aria-labelledby="h-rules">
       <h2 id="h-rules">Regole</h2>
       <p class="hint">Audio sempre in inglese, sottotitoli spenti, anche quelli in inglese. Il tempo va diviso in parti uguali tra i tre tipi. Semplificato e tecnico: stesso spezzone finché non capisci l’80%. Quotidiano: ogni giorno roba nuova.</p>
@@ -701,6 +681,43 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
         </div>
       </details>
     </section>
+    <section style="display:grid;gap:10px" aria-labelledby="h-impo">
+      <h2 id="h-impo">Impostazioni</h2>
+      <section class="card" aria-labelledby="h-set">
+        <h2 id="h-set">Collegamento</h2>
+        <p class="hint" id="set-status"></p>
+        <form class="row" id="tokform">
+          <input type="password" id="tok" placeholder="Chiave dell’archivio dati" autocomplete="off" aria-label="Chiave dell’archivio dati">
+          <button class="btn solid" type="submit">Collega</button>
+        </form>
+        <div class="row">
+          <button type="button" class="btn" id="pushbtn">Attiva la notifica del mattino</button>
+          <button type="button" class="ghost" id="syncbtn">Aggiorna adesso</button>
+        </div>
+        <p class="hint">Su iPhone la notifica funziona solo dall’app aggiunta alla schermata Home: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
+      </section>
+      <section class="card" aria-labelledby="h-theme">
+        <h2 id="h-theme">Aspetto</h2>
+        <div class="chips scale three" id="themes" role="group" aria-label="Tema dei colori" style="--accent:var(--fg)"></div>
+        <p class="hint">Automatico segue le impostazioni del telefono. Con Chiaro o Scuro l’app resta sempre così.</p>
+      </section>
+
+      <section class="card" aria-labelledby="h-app">
+        <h2 id="h-app">App</h2>
+        <p class="hint">Versione <b id="appver"></b>. Se non vedi le novità appena pubblicate, tocca qui sotto: scarica di nuovo i file dell’app. I tuoi dati e le notifiche restano.</p>
+        <div class="row"><button type="button" class="btn" id="updbtn">Aggiorna l’app</button></div>
+      </section>
+
+      <details class="fold">
+        <summary>Novità</summary>
+        <div><ul class="whatsnew" id="whatsnew"></ul></div>
+      </details>
+
+      <details class="fold">
+        <summary>Cronologia</summary>
+        <div><p class="hint">Le ultime azioni fatte nell’app, dalla più recente.</p><ul id="loglist"></ul></div>
+      </details>
+    </section>
   </section>
 </div>
 
@@ -803,16 +820,16 @@ async function pull(){
 }
 const sync = () => dirty ? push() : pull();
 function logEv(e){ const n = new Date(); log = log.concat({t: ymd(n)+' '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds()), e}).slice(-500); }
-function saveState(patch, ev){ if(ev) logEv(ev); achSnapshot(); state = Object.assign({}, state, patch); const fresh = achCheck(); renderAll(); queueSave(); achNotify(fresh); }
+function saveState(patch, ev){ if(ev) logEv(ev); achSnapshot(); const q0 = qSnap(); state = Object.assign({}, state, patch); const fresh = achCheck(); renderAll(); queueSave(); achNotify(fresh, questMsg(q0)); }
 
 /* ---------- avvisi e coriandoli ---------- */
 let toastTimer;
 let achPending = '';
-function toast(msg, undo){
+function toast(msg, undo, ms){
   if(achPending){ msg = msg ? msg+' · '+achPending : achPending; achPending = ''; }
   const t = $('toast'); t.textContent = ''; t.append(msg);
   if(undo) t.append(el('button',{type:'button', onclick:()=>{ t.hidden = true; undo(); }}, 'Annulla'));
-  t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, undo ? 6000 : 3200);
+  t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, ms || (undo ? 6000 : 3200));
 }
 function confetti(){
   if(matchMedia('(prefers-reduced-motion:reduce)').matches) return;
@@ -832,12 +849,12 @@ function confetti(){
 /* ---------- OGGI ---------- */
 let bumpK = null;
 function setMin(k, v){
-  bumpK = k; achSnapshot();
+  bumpK = k; achSnapshot(); const q0 = qSnap();
   const before = today(), g = goal();
   const t = Object.assign({}, before, {[k]: Math.max(0, v)});
   days[TODAY] = {date:TODAY, sem:t.sem, quo:t.quo, tec:t.tec, u:'min', g};
   if(k==='quo' && state) state = Object.assign({}, state, {quo: advanceEp(state.quo, t.quo-before.quo)});
-  logEv(NAMES[k]+': '+before[k]+'′ → '+t[k]+'′'); const fresh = achCheck(); renderAll(); queueSave(); achNotify(fresh);
+  logEv(NAMES[k]+': '+before[k]+'′ → '+t[k]+'′'); const fresh = achCheck(); renderAll(); queueSave(); achNotify(fresh, questMsg(q0, ['min','obj']));
   const was = K.every(x => before[x]>=g), is = K.every(x => t[x]>=g);
   if(!was && is){ confetti(); toast('Obiettivo di oggi raggiunto: '+g*3+'′'); }
   else if(!K.every(x => before[x]>=MIN) && K.every(x => t[x]>=MIN)) toast('Minimo fatto: la serie continua');
@@ -857,7 +874,7 @@ function renderToday(){
     for(let i=1;i<=segs;i++){
       const on = t[k]>=i*STEP;
       // toccare l'ultima tacca accesa la spegne
-      meter.append(el('button',{type:'button', class:'seg'+(on?' on':'')+(on && i*STEP>g?' extra':'')+(i*STEP===g && segs*STEP>g?' goal':''), 'aria-label':'Imposta '+NAMES[k]+' a '+i*STEP+' minuti', onclick:()=>setMin(k, t[k]===i*STEP ? (i-1)*STEP : i*STEP)}));
+      meter.append(el('button',{type:'button', class:'seg'+(on?' on':'')+(on && i*STEP>g?' extra':'')+(i*STEP===g && segs*STEP>g?' goal':'')+(g>MIN && i*STEP===MIN?' min':''), 'aria-label':'Imposta '+NAMES[k]+' a '+i*STEP+' minuti', onclick:()=>setMin(k, t[k]===i*STEP ? (i-1)*STEP : i*STEP)}));
     }
     mx.append(el('div',{class:'ch t-'+k+(k===next && !done?' next':'')+(t[k]>=g?' done':'')},
       el('div',{class:'ch-name'}, NAMES[k]), meter,
@@ -902,8 +919,6 @@ function renderNow(){
   const p = todayPlan(), t = today();
   for(const k of K){
     const cur = state[k] || {};
-    const since = cur.since ? daysBetween(cur.since, TODAY) : null;
-    const age = k==='quo' ? 'sempre nuovo' : (since===null ? '' : (since===0 ? 'da oggi' : 'da '+since+(since===1?' giorno':' giorni')));
     const left = Math.max(0, p.target - t[k]);
     const card = el('div',{class:'track t-'+k});
     card.append(el('div',{class:'top'}, el('span',{class:'tag'}, NAMES[k]+(k==='tec' && cur.topic ? ' · '+cur.topic : '')), el('span',{class:'left mono'+(left ? '' : ' ok')}, left ? 'ancora '+left+'′' : 'fatto ✓')));
@@ -926,7 +941,6 @@ function renderNow(){
       b.onclick = () => { if(!long && cur.label) location.href = url; };
       card.append(b);
     }
-    card.append(el('div',{class:'where'}, (k==='tec' ? p.tec : p.tv)+(age ? ' · '+age : '')));
     if(k==='quo'){
       const q = advanceEp(cur, 0), setQ = (pos, ev) => saveState({quo: Object.assign({}, q, pos)}, ev);
       card.append(el('div',{class:'ep mono'}, 'Stagione '+q.s+' · episodio '+q.e),
@@ -985,9 +999,7 @@ function renderReport(){
   if(!on) return;
   box.onclick = openPiano; box.setAttribute('role','button'); box.tabIndex = 0;
   box.onkeydown = e => { if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openPiano(); } };
-  const p = state ? todayPlan() : null, sh = state && state.shifts && state.shifts[TODAY];
-  box.append(el('div',{class:'eyebrow'}, 'Report del mattino'),
-    el('div',{class:'rtitle'}, el('span',{}, p ? p.kind+(sh ? ' '+sh+'-'+(sh+8) : '')+' · '+p.target*3+'′' : 'Tocca per il piano'), el('span',{class:'chev','aria-hidden':'true'}, '›')));
+  box.append(el('div',{class:'rtitle'}, el('span',{}, 'Report del mattino'), el('span',{class:'chev','aria-hidden':'true'}, '›')));
 }
 /* ---------- PIANO DI OGGI (si apre toccando la notifica o il report) ---------- */
 function openPiano(){
@@ -1235,10 +1247,11 @@ function stats(){
 const trackOf = id => TRACKS.find(t => t.id===id);
 const tierName = id => { const [t, n] = id.split(':'), x = trackOf(t) && trackOf(t).tiers.find(y => y[0]===+n); return x ? x[1] : id; };
 const achNow = () => achieve(days, state, TODAY, goal());
-function achSnapshot(){      // prima scrittura in assoluto: ciò che c'è già non si festeggia
-  if(!state || state.ach) return;
-  const got = {}; achNow().earned.forEach(id => { got[id] = ''; });
-  state = Object.assign({}, state, {ach: {got, lvl: stats().li, lvlDate: ''}});
+const ACH_V = 2;             // sale quando si aggiungono percorsi: i traguardi già maturi si registrano in silenzio
+function achSnapshot(){      // prima scrittura in assoluto (o dopo nuovi percorsi): ciò che c'è già non si festeggia
+  if(!state || (state.ach && state.ach.v===ACH_V)) return;
+  const got = Object.assign({}, state.ach && state.ach.got); achNow().earned.forEach(id => { if(!(id in got)) got[id] = ''; });
+  state = Object.assign({}, state, {ach: Object.assign({lvl: stats().li, lvlDate: ''}, state.ach, {got, v: ACH_V})});
 }
 function achCheck(){         // dopo una scrittura: cosa si è sbloccato adesso (nomi da annunciare)
   if(!state || !state.ach) return null;
@@ -1248,15 +1261,24 @@ function achCheck(){         // dopo una scrittura: cosa si è sbloccato adesso 
   let lvl = state.ach.lvl, lvlDate = state.ach.lvlDate, up = '';
   if(li > lvl){ lvl = li; lvlDate = TODAY; up = 'Nuovo livello: '+LEVELS[li][1]; }
   else if(li < lvl && lvlDate===TODAY) lvl = li;
-  const next = {got, lvl, lvlDate};
+  const next = Object.assign({}, state.ach, {got, lvl, lvlDate});
   if(JSON.stringify(next) !== JSON.stringify(state.ach)) state = Object.assign({}, state, {ach: next});
   return {up, fresh};
 }
-function achNotify(r){       // un solo avviso, accodato a quello di chi ha scritto
-  if(!r || (!r.up && !r.fresh.length)) return;
-  const tr = r.fresh.length===1 ? 'Traguardo: '+r.fresh[0] : r.fresh.length ? r.fresh.length+' traguardi: '+r.fresh.join(', ') : '';
-  achPending = [r.up, tr].filter(Boolean).join(' · ');
-  confetti();
+// missioni del giorno: prima/dopo una scrittura, per annunciare quelle appena fatte
+const questsNow = () => dayQuests(days, state, TODAY, goal());
+const qSnap = () => { const q = questsNow(); return {ids: q.items.filter(x => x.done).map(x => x.id), full: q.full}; };
+function questMsg(q0, skip){
+  const q = questsNow(), msgs = q.items.filter(x => x.done && !q0.ids.includes(x.id) && !(skip || []).includes(x.id)).map(x => x.name+' +'+x.pts);
+  if(q.full && !q0.full){ msgs.push('Giornata piena ⭐ +'+FULL_BONUS); confetti(); }
+  return msgs.length ? 'Missione: '+msgs.join(', ') : '';
+}
+function achNotify(r, q){    // un solo avviso, accodato a quello di chi ha scritto
+  const up = r ? r.up : '', fresh = r ? r.fresh : [];
+  if(!up && !fresh.length && !q) return;
+  const tr = fresh.length===1 ? 'Traguardo: '+fresh[0] : fresh.length ? fresh.length+' traguardi: '+fresh.join(', ') : '';
+  achPending = [q, up, tr].filter(Boolean).join(' · ');
+  if(up || fresh.length) confetti();
   setTimeout(() => { if(achPending) toast(''); }, 0);
 }
 function renderGame(s){
@@ -1308,13 +1330,13 @@ function renderProgress(){
   $('lvl-next').textContent = nx ? hh(s.hours)+' / '+nx[0]+' h · poi '+nx[1] : hh(s.hours)+' h';
   $('lvl-bar').style.width = (nx ? Math.min(100,(s.hours-lv[0])/(nx[0]-lv[0])*100) : 100)+'%';
   $('s-streak').textContent = s.streak; $('s-best').textContent = s.best; $('s-hours').textContent = hh(s.hours); $('s-perfect').textContent = s.perfect;
-  $('jolly').textContent = 'Jolly disponibili: '+s.bank+'. Ne arriva uno ogni mese e si accumulano: se salti un giorno ne parte uno da solo e la serie non si rompe.'+(s.used.length ? ' Usati: '+s.used.map(fmtDay).join(', ')+'.' : '');
+  $('jolly').textContent = s.bank; jollyInfo = 'Jolly: '+s.bank+'. Tengono ferma la serie: se salti un giorno ne parte uno da solo. Ne arriva uno al mese e si accumulano.'+(s.used.length ? ' Usati: '+s.used.map(fmtDay).join(', ')+'.' : '');
 
   // settimana in corso
   const wk = $('week'); wk.textContent = '';
   const mon = new Date(mondayOf(new Date())+'T12:00'), dn = ['L','M','M','G','V','S','D'];
   const rows = dn.map((n,i) => { const d = new Date(mon); d.setDate(d.getDate()+i); const dt = ymd(d), v = norm(days[dt]); return {n, dt, v, g: dt>=TODAY || !v.g ? planFor(d.getDay()).target : v.g}; });
-  const scale = Math.max(135, ...rows.map(r => sum(r.v)));
+  const scale = Math.max(90,...rows.map(r => sum(r.v)));
   rows.forEach(r => {
     const col = el('div',{class:'col', title: sum(r.v)+'′ su '+r.g*3+'′'});
     K.forEach(k => { const i = el('i',{}); i.style.height = r.v[k]/scale*100+'%'; i.style.background = 'var(--'+k+')'; col.append(i); });
@@ -1354,7 +1376,18 @@ function renderLog(){
   if(!log.length) ul.append(el('li',{class:'hint'}, 'Ancora niente.'));
   log.slice(-40).reverse().forEach(x => ul.append(el('li',{}, el('span',{}, x.t), x.e)));
 }
-function renderAll(){ renderLog(); renderReport(); renderPlan(); renderToday(); renderNow(); renderFeed(); renderQuiz(); renderWords(); renderProgress(); }
+function renderDayQ(){
+  const box = $('dayq'), q = questsNow(), A = achNow(), left = q.items.filter(x => x.core && !x.done).length;
+  box.textContent = '';
+  box.append(el('div',{class:'dq-top'}, el('h2',{}, 'Missioni di oggi'), el('span',{class:'mono'}, q.pts+' / '+q.max+' punti')),
+    el('div',{class:'bar','aria-hidden':'true'}, el('i',{style:'width:'+q.pts/q.max*100+'%;background:var(--gold)'})),
+    el('ul',{}, ...q.items.map(x => el('li',{class:(x.done ? 'done' : '')+(x.core ? '' : ' bonus')},
+      el('span',{class:'ck','aria-hidden':'true'}, x.done ? '✓' : ''),
+      el('div',{}, el('b',{class:'nm'}, x.name), el('div',{class:'hint'}, x.hint)),
+      el('span',{class:'pts'}, (x.done ? '+' : '')+x.pts)))),
+    el('p',{class:'hint'+(q.full ? ' full' : '')}, (q.full ? 'Giornata piena ⭐ (+'+FULL_BONUS+' di bonus). ' : (left===1 ? 'Manca 1 missione' : 'Mancano '+left+' missioni')+' per la giornata piena (+'+FULL_BONUS+'). ')+'In tutto: '+A.vals.punti+' punti, '+A.vals.piene+(A.vals.piene===1 ? ' giornata piena.' : ' giornate piene.')));
+}
+function renderAll(){ renderLog(); renderReport(); renderPlan(); renderToday(); renderDayQ(); renderNow(); renderFeed(); renderQuiz(); renderWords(); renderProgress(); }
 
 /* ---------- viste: scorrimento col dito, barra che segue ---------- */
 const VIEWS = ['oggi','parole','progressi','guida'];
@@ -1386,18 +1419,21 @@ addEventListener('hashchange', () => { if(parolaDaLink()) return; const v = loca
 addEventListener('resize', () => go(curView, false));
 
 /* ---------- collegamento e notifiche ---------- */
-$('nosave').onclick = () => go('guida');
+$('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollIntoView({behavior:'smooth', block:'center'}), 400); };      // il collegamento sta in fondo alla Guida
+let jollyInfo = '';
+$('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.12-10';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.13-1';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.13-1', ['Obiettivo di 30′ per tipo in tutti i giorni tranne la partita (15′).', 'Sulle tacche, la linea dorata tratteggiata segna il minimo di 15′.', 'Il jolly sta in Oggi, accanto al livello: tocca lo scudo per sapere come funziona.', 'Missioni di oggi con punti, giornata piena e due nuovi percorsi: Giornate piene e Punti.', 'In Oggi tolte le scritte sul turno e il riepilogo nel report; in Guida le impostazioni sono in fondo e le novità a tendina.']],
   ['2026.11.12-10', ['I caratteri sono dentro l’app: niente più attesa o caratteri diversi senza rete.']],
   ['2026.11.12-9', ['Parola al volo dal tasto Azione: crea un Comando Rapido che apre «…/inglese/#parola».', 'Nella notifica della sera compare la settimana d’oro (venerdì e domenica) e, la domenica, il livello se c’è posto.', 'Qui in Guida vedi cosa è cambiato a ogni aggiornamento.']],
   ['2026.11.12-8', ['Avviso se un podcast non si aggiorna.', 'Nel piano del giorno, il confronto con la settimana scorsa.', 'Semplificato a blocchi di episodi: all’80% propone il blocco dopo.', 'Colori del tema chiaro più leggibili.']],
   ['2026.11.12-7', ['Il riquadro della parola sta sopra la tastiera.', '«Quanto hai capito?» è uguale su tutte le card; toccando di nuovo il valore lo togli.']],
 ];
 $('appver').textContent = APP_VERSION;
-NOVITA.slice(0, 3).forEach(([v, frasi]) => $('whatsnew').append(el('li',{}, el('b',{}, v), el('ul',{}, ...frasi.map(f => el('li',{}, f))))));
+NOVITA.slice(0, 8).forEach(([v, frasi]) => $('whatsnew').append(el('li',{}, el('b',{}, v), el('ul',{}, ...frasi.map(f => el('li',{}, f))))));
 $('updbtn').onclick = async () => {
   const b = $('updbtn'); b.disabled = true; b.textContent = 'Aggiorno…';
   try{

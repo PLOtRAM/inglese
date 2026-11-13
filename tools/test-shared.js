@@ -15,7 +15,29 @@ assert.equal(S.planOf({}, mon, 1).target, 30);
 assert.equal(S.planOf({}, sun, 0).kind, 'Domenica');
 const w = {week:{monday:'2026-11-09', type:'dom'}};
 assert.equal(S.planOf(w, new Date('2026-11-11T12:00'), 3).target, 30);   // mercoledì, non allenamento
-assert.equal(S.planOf(w, new Date('2026-11-10T12:00'), 2).target, 45);   // martedì, allenamento
+assert.equal(S.planOf(w, new Date('2026-11-10T12:00'), 2).target, 30);   // martedì, allenamento: 30′ per tipo come il turno
+assert.equal(S.planOf(w, sun, 0).target, 15);                            // partita: resta 15′
+assert.equal(S.planOf({week:{monday:'2026-11-09', type:'sab'}}, sun, 0).target, 30);        // giorno libero dopo la partita del sabato
+assert.equal(S.planOf({week:{monday:'2026-11-09', type:'sab'}}, new Date('2026-11-14T12:00'), 6).target, 15);   // partita di sabato
+// nessun piano ha più il vecchio obiettivo da 45′
+for(const t of Object.keys(S.WEEKS)) for(let d = 0; d < 7; d++) assert.ok(S.dayPlan(t, d).target <= 30);
+
+// dayQuests: tre missioni core fanno la giornata piena, i bonus danno solo punti
+let Q = S.dayQuests({}, {}, '2026-11-12', 30);
+assert.equal(Q.pts, 0); assert.equal(Q.full, false);
+const full30 = {'2026-11-12': {u:'min', sem:30, quo:30, tec:30}}, wd = {words:[{date:'2026-11-12'}]};
+Q = S.dayQuests(full30, wd, '2026-11-12', 30);
+assert.equal(Q.full, true); assert.equal(Q.pts, 10 + 20 + 10 + S.FULL_BONUS);
+Q = S.dayQuests(full30, Object.assign({revDays:['2026-11-12'], sem:{comp:[{d:'2026-11-12', p:60}]}}, wd), '2026-11-12', 30);
+assert.equal(Q.pts, Q.max);                                                                // tutto: bonus compresi
+assert.equal(S.dayQuests(full30, {}, '2026-11-12', 30).full, false);                      // senza parola nuova non è piena
+assert.equal(S.dayQuests({'2026-11-12': {u:'min', sem:15, quo:15, tec:15}}, wd, '2026-11-12', 30).items.find(x => x.id==='obj').done, false);
+assert.equal(S.dayQuests({}, {history:[{comp:[{d:'2026-11-12', p:80}]}]}, '2026-11-12', 30).items.find(x => x.id==='cmp').done, true);   // stima fatta prima di chiudere lo spezzone
+// i punti e le giornate piene arrivano dentro achieve
+const AQ = S.achieve(full30, wd, '2026-11-12', 30);
+assert.equal(AQ.vals.piene, 1); assert.equal(AQ.vals.punti, 60);
+assert.ok(AQ.earned.includes("piene:1"));
+assert.equal(S.achieve(full30, wd, '2026-11-12', 45).vals.piene, 0);                       // oggi vale l'obiettivo di oggi
 assert.equal(S.planOf(w, sun, 0).kind, 'Partita');
 assert.equal(S.planOf({week:{monday:'2026-11-02', type:'dom'}}, mon, 2).target, 30);   // tipo scaduto: vale solo la sua settimana
 
