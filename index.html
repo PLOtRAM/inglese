@@ -96,7 +96,7 @@ input[type=text],input[type=search],input[type=password]{font:inherit;font-size:
 .seg.extra{background:color-mix(in srgb,var(--accent) 55%,var(--gold))}
 .seg.goal,.seg.min{position:relative}
 .seg.goal::after,.seg.min::after{content:"";position:absolute;left:-6px;right:-6px;top:-3px;border-top:2px dashed var(--muted)}
-.seg.min::after{border-top-color:var(--gold)}
+.seg.min::after{border-top-color:var(--gold);top:auto;bottom:-3px}      /* sotto la tacca dei 15′: arrivando a 15′ la barra supera la linea */
 button.pill{font:inherit;font-size:.85rem;font-weight:700;color:var(--fg);cursor:pointer}
 .dayq{display:grid;gap:10px}
 .dayq .dq-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -163,7 +163,23 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .word .main{display:flex;gap:6px 12px;align-items:baseline;flex-wrap:wrap}
 .word .w{font-family:var(--f-display);font-weight:800;font-size:1.15rem;overflow-wrap:anywhere}
 .word .tr{border:0;background:transparent;padding:0;color:var(--muted);font-size:1rem;text-align:left;overflow-wrap:anywhere}
-.word .tr.hid{background:var(--surface2);color:transparent;border-radius:6px;padding:0 10px;user-select:none}
+.word .tr.hid{filter:blur(7px);user-select:none;cursor:pointer}
+.word .tr.add-tr{color:var(--tec);text-decoration:underline;font-size:.92rem}
+.sens{display:grid;gap:4px;text-align:left}
+.sense{display:flex;gap:6px;align-items:baseline;font-size:1rem}
+.sense .n{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.exm{display:grid;margin:0 0 4px;padding-left:10px;border-left:2px solid var(--line);font-size:.9rem}
+.sense + .exm{margin-left:20px}
+.exm .en{font-style:italic}
+.exm .it{color:var(--muted)}
+.word .prop{display:grid;gap:8px;padding:10px 12px;border-radius:var(--r-m,12px);background:color-mix(in srgb,var(--tec) 8%,var(--surface));border:1px dashed color-mix(in srgb,var(--tec) 45%,var(--line))}
+.fc-t .sens{justify-items:center;text-align:center;margin-top:8px}
+.fc-t .exm{border:0;padding:0;margin:0}
+.pillar{display:grid;gap:6px}
+.chips button.t-sem[aria-pressed=true]{background:var(--sem);border-color:var(--sem)}
+.chips button.t-quo[aria-pressed=true]{background:var(--quo);border-color:var(--quo)}
+.chips button.t-tec[aria-pressed=true]{background:var(--tec);border-color:var(--tec)}
+.wform textarea{font:inherit;font-weight:400;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0;resize:vertical}
 .word.got{border-color:color-mix(in srgb,var(--ok) 50%,var(--line))}
 .word.got .w::after{content:" ✓";color:var(--ok)}
 .word .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
@@ -419,7 +435,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
         <summary>Come funziona</summary>
         <div>
           <p class="hint" id="goaltext"></p>
-          <p class="hint">Ogni tacca vale 5′. Tocca +5′ oppure direttamente la tacca a cui sei arrivato. La linea dorata tratteggiata è il minimo di 15′ (con quello la serie continua); quella grigia compare quando superi l’obiettivo e ne segna il punto.</p>
+          <p class="hint">Ogni tacca vale 5′. Tocca +5′ oppure direttamente la tacca a cui sei arrivato. La linea dorata tratteggiata segna il minimo: quando la barra la supera hai fatto 15′ e la serie continua; quella grigia compare quando superi l’obiettivo e ne segna il punto.</p>
         </div>
       </details>
     </section>
@@ -472,16 +488,18 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <h2 id="h-addw">Nuova parola</h2>
       <form class="wform" id="wform">
         <label>Parola in inglese<input type="text" id="w-word" placeholder="es. mortgage" autocomplete="off" autocapitalize="off"></label>
-        <label>Traduzione<input type="text" id="w-tr" placeholder="anche dopo, quando l’hai capita" autocomplete="off"></label>
-        <label class="full">Da dove viene<input type="text" id="w-src" placeholder="es. At The Money, The Office S1E3" list="srcs" autocomplete="off"></label>
-        <datalist id="srcs"></datalist>
-        <div class="chips full" id="srcchips" role="group" aria-label="Provenienze rapide"></div>
+        <label>Traduzione<input type="text" id="w-tr" placeholder="più significati separati da ;" autocomplete="off"></label>
+        <label class="full">Esempio<textarea id="w-ex" rows="2" placeholder="una riga per esempio: frase in inglese | traduzione"></textarea></label>
+        <input type="hidden" id="w-src">
+        <div class="full pillar"><span class="hint">Da quale dei tre? (facoltativo)</span><div class="chips" id="srcchips" role="group" aria-label="Pilastro"></div></div>
         <div class="row full">
           <button type="submit" class="btn solid" id="w-save">Aggiungi parola</button>
+          <button type="button" class="btn" id="w-auto">Proponi traduzione ed esempio</button>
           <button type="button" class="ghost" id="w-cancel" hidden>Annulla modifica</button>
         </div>
+        <p class="hint full" id="w-autonote" hidden></p>
       </form>
-      <p class="hint">Scrivila come pensi che si scriva. La traduzione cercala solo se dopo qualche giorno non l’hai capita dal contesto.</p>
+      <p class="hint">Scrivila come pensi che si scriva. «Proponi» cerca da solo traduzione ed esempio (gratis, da controllare); se la parola ha più significati, separali con «;» e metti un esempio per riga.</p>
     </section>
 
     <section aria-labelledby="h-words" style="display:grid;gap:10px">
@@ -489,7 +507,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
         <h2 id="h-words">Le tue parole</h2>
         <span class="hint mono" id="wcount"></span>
       </div>
-      <input type="search" id="w-q" placeholder="Cerca parola, traduzione o provenienza" aria-label="Cerca tra le parole">
+      <input type="search" id="w-q" placeholder="Cerca parola, traduzione o esempio" aria-label="Cerca tra le parole">
       <div class="wtools">
         <div class="chips" id="wfilter" role="group" aria-label="Filtro"></div>
         <button type="button" class="ghost" id="w-hide" aria-pressed="false">Nascondi traduzioni</button>
@@ -515,16 +533,13 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <div class="stat"><b id="s-perfect">0</b><span>giorni a obiettivo</span></div>
     </section>
 
-    <section class="card" aria-labelledby="h-mis">
-      <div class="m-head"><h2 id="h-mis">Missioni della settimana</h2><span class="hint" id="mis-gold"></span></div>
-      <div class="missions" id="missions"></div>
-      <p class="hint" id="mis-note"></p>
-    </section>
-
     <section class="card" aria-labelledby="h-wk">
       <h2 id="h-wk">Questa settimana</h2>
       <div class="week" id="week"></div>
       <div class="legend"><span><i style="background:var(--sem)"></i>semplificato</span><span><i style="background:var(--quo)"></i>quotidiano</span><span><i style="background:var(--tec)"></i>tecnico</span><span>tratteggio = obiettivo del giorno</span></div>
+      <div class="m-head"><h3 id="h-mis">Missioni della settimana</h3><span class="hint" id="mis-gold"></span></div>
+      <div class="missions" id="missions"></div>
+      <p class="hint" id="mis-note"></p>
     </section>
 
     <section class="card" aria-labelledby="h-heat">
@@ -533,28 +548,25 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       <div class="legend"><span><i class="h1" style="background:color-mix(in srgb,var(--ok) 30%,var(--surface2))"></i>qualcosa</span><span><i style="background:color-mix(in srgb,var(--ok) 65%,var(--surface2))"></i>minimo (15′ per tipo)</span><span><i style="background:var(--ok)"></i>obiettivo</span></div>
     </section>
 
-    <section class="card" aria-labelledby="h-month">
-      <h2 id="h-month">Mese per mese</h2>
-      <div id="months" style="display:grid;gap:14px"></div>
-    </section>
-
-    <section aria-labelledby="h-paths" class="sec">
-      <h2 id="h-paths">Percorsi</h2>
-      <p class="hint">Ogni percorso è una scala di traguardi: ne vedi uno alla volta, il prossimo. Quelli in fondo mettono insieme gli altri.</p>
-      <div class="paths" id="paths"></div>
-      <h3 class="sub-h">Imprese</h3>
-      <div class="paths" id="metapaths"></div>
-    </section>
-
     <section aria-labelledby="h-last" class="sec">
       <h2 id="h-last">Ultimi traguardi</h2>
       <ul class="lastach" id="lastach"></ul>
     </section>
 
-    <section aria-labelledby="h-hist" style="display:grid;gap:10px">
-      <h2 id="h-hist">Spezzoni chiusi all’80%</h2>
-      <div id="hist"></div>
-    </section>
+    <details class="fold">
+      <summary><span id="h-paths">Percorsi e imprese</span></summary>
+      <div class="foldbody">
+        <p class="hint">Ogni percorso è una scala di traguardi: ne vedi uno alla volta, il prossimo. Le imprese mettono insieme gli altri percorsi.</p>
+        <div class="paths" id="paths"></div>
+        <h3 class="sub-h">Imprese</h3>
+        <div class="paths" id="metapaths"></div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span id="h-month">Mese per mese</span></summary>
+      <div class="foldbody"><div id="months" style="display:grid;gap:14px"></div></div>
+    </details>
   </section>
 
   <!-- GUIDA -->
@@ -711,6 +723,11 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       </details>
 
       <details class="fold">
+        <summary>Spezzoni chiusi all’80%</summary>
+        <div><p class="hint">Gli ultimi dieci, con quanto avevi capito a ogni riascolto.</p><div id="hist"></div></div>
+      </details>
+
+      <details class="fold">
         <summary>Cronologia</summary>
         <div><p class="hint">Le ultime azioni fatte nell’app, dalla più recente.</p><ul id="loglist"></ul></div>
       </details>
@@ -723,7 +740,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
   <form class="sheetbox" id="qform">
     <div class="sheethead"><h2 id="sheet-t">Parola sentita adesso</h2><button type="button" class="x" id="sheet-x" aria-label="Chiudi">×</button></div>
     <input type="text" id="q-word" placeholder="es. mortgage" autocomplete="off" autocapitalize="off" aria-label="Parola sentita adesso">
-    <p class="hint">La traduzione la aggiungi dopo, dalla scheda Parole.</p>
+    <p class="hint">Traduzione ed esempio te li propongo io, li controlli dopo nella scheda Parole.</p>
     <p class="hint warn" id="sheet-msg" hidden></p>
     <button type="submit" class="btn solid" id="q-save">Aggiungi parola</button>
   </form>
@@ -811,7 +828,6 @@ async function pull(){
     if(dirty || saving) return;
     sha = d.sha; days = d.data.days || {}; state = d.data.state || {}; log = d.data.log || []; if(f) feed = f.data; if(rp) report = rp.data;
     cache(); setStatus('');
-    if(!$('w-src').value && state.tec && state.tec.topic) $('w-src').value = state.tec.topic;
     renderAll();
   }catch(e){ setStatus(errMsg(e, 'Senza rete: vedi gli ultimi dati salvati sul telefono.')); }
 }
@@ -1116,7 +1132,7 @@ function renderQuiz(){
   }
   const w = ws.find(x => x.id===quiz.queue[0]), step = quiz.steps[w.id];
   box.append(el('div',{class:'hint mono'}, quiz.queue.length+' rimaste · '+quiz.done+' fatte'),
-    el('div',{class:'fc'}, el('div',{class:'fc-w'}, revIt ? w.t : w.w), w.src ? el('span',{class:'loc'}, w.src) : null, quiz.shown ? el('div',{class:'fc-t'}, revIt ? w.w : w.t) : null,
+    el('div',{class:'fc'}, el('div',{class:'fc-w'}, revIt ? senses(w).meanings.join(' · ') : w.w), w.src ? el('span',{class:'loc'}, w.src) : null, quiz.shown ? el('div',{class:'fc-t'}, revIt ? w.w : null, revIt ? renderSenses(w, 'ex') : renderSenses(w)) : null,
       canSpeak && (!revIt || quiz.shown) ? el('button',{type:'button', class:'ghost', onclick:()=>speak(w.w)}, 'Ascolta') : null));
   if(!quiz.shown) box.append(el('button',{type:'button', class:'show', onclick:()=>{ quiz.shown = true; renderQuiz(); }}, 'Mostra la risposta'));
   else {
@@ -1134,38 +1150,67 @@ addEventListener('keydown', e => {
 });
 
 /* ---------- PAROLE ---------- */
-const wordsOf = () => ((state && state.words) || []).map(x => { const o = Object.assign({}, x, {w:x.w||'', t:x.t||'', src: x.src!=null ? x.src : (x.ctx||''), got:!!x.got}); delete o.ctx; return o; });
+const wordsOf = () => ((state && state.words) || []).map(x => { const o = Object.assign({}, x, {w:x.w||'', t:x.t||'', ex:x.ex||'', src: pillarOf(x.src!=null ? x.src : (x.ctx||'')), got:!!x.got}); delete o.ctx; return o; });
 const fmtDay = d => d ? new Date(d+'T12:00').toLocaleDateString('it-IT',{day:'numeric',month:'short'}) : '';
-function sources(){
-  const s = state || {}, out = [];
-  if(s.tec && s.tec.topic) out.push(s.tec.topic);
-  out.push('The Office','Peppa Pig');
-  wordsOf().forEach(w => { if(w.src) out.push(w.src); });
-  TOPICS.forEach(t => out.push(t));
-  return [...new Set(out)];
+/* Significati numerati (se più d'uno), ognuno con il suo esempio; senza abbinamento, prima i significati e poi gli esempi. */
+const exEl = x => el('p',{class:'exm'}, el('span',{class:'en'}, x.e), x.i ? el('span',{class:'it'}, x.i) : null);
+function renderSenses(w, only){      // only: 'ex' = solo gli esempi
+  const sn = senses(w), box = el('div',{class:'sens'}), many = sn.meanings.length > 1;
+  if(only!=='ex') sn.meanings.forEach((m,i) => { box.append(el('div',{class:'sense'}, many ? el('b',{class:'n'}, (i+1)+'.') : null, el('span',{class:'m'}, m.charAt(0).toUpperCase()+m.slice(1)))); if(sn.paired) box.append(exEl(sn.examples[i])); });
+  if(only==='ex' || !sn.paired) sn.examples.forEach(x => box.append(exEl(x)));
+  return box;
+}
+/* Proposta automatica, gratis e senza chiavi: MyMemory per la traduzione, Free Dictionary per un esempio inglese (solo parole singole), poi MyMemory traduce l'esempio.
+   È solo una proposta: non entra nel ripasso finché non la accetti o non la correggi. Se la rete manca o un servizio non risponde, restituisce null. */
+const apiJson = async url => { const r = await fetch(url, {signal: AbortSignal.timeout(7000)}); if(!r.ok) throw 0; return r.json(); };
+const flat = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+async function proposeFor(word){
+  try{
+    const j = await apiJson('https://api.mymemory.translated.net/get?langpair=en|it&q='+encodeURIComponent(word)), seen = new Set(), ts = [];
+    [{translation: j.responseData && j.responseData.translatedText}].concat((j.matches || []).filter(m => flat(m.segment || '')===flat(word))).forEach(m => {
+      const t = (m.translation || '').replace(/[.!]+$/, '').trim(), k = t.toLowerCase();
+      if(t && k!==word.toLowerCase() && !seen.has(k) && ts.length < 3){ seen.add(k); ts.push(t); }
+    });
+    if(!ts.length) return null;
+    let ex = '';
+    if(/^[a-z][a-z'-]*$/i.test(word)) try{
+      const d = await apiJson('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
+      const e = d[0].meanings.flatMap(m => m.definitions).map(x => x.example).find(Boolean);
+      if(e){ const tj = await apiJson('https://api.mymemory.translated.net/get?langpair=en|it&q='+encodeURIComponent(e)); ex = e+' — '+((tj.responseData && tj.responseData.translatedText) || ''); }
+    }catch(_){}
+    return {t: ts.join(', '), ex};
+  }catch(_){ return null; }
+}
+async function autoPropose(id, word){      // dopo il salvataggio: la proposta si aggancia alla parola giusta, se c'è ancora e non ha già una traduzione
+  const p = await proposeFor(word); if(!p) return;
+  const ws = wordsOf(), cur = ws.find(x => x.id===id); if(!cur || cur.t || cur.prop) return;
+  saveState({words: ws.map(x => x.id===id ? Object.assign({}, x, {prop:p}) : x)}, 'proposta automatica: '+word);
 }
 function renderWords(){
   const all = wordsOf(), learned = all.filter(w => w.got).length;
   $('wcount').textContent = all.length ? all.length+(all.length===1?' parola':' parole')+' · '+learned+' imparate' : '';
-  const src = sources();
-  const dl = $('srcs'); dl.textContent = ''; src.forEach(s => dl.append(el('option',{value:s})));
   const sc = $('srcchips'); sc.textContent = '';
-  src.slice(0,4).forEach(s => sc.append(el('button',{type:'button','aria-pressed':String($('w-src').value===s), onclick:()=>{ $('w-src').value = s; renderWords(); }}, s)));
+  PILLARS.forEach(s => sc.append(el('button',{type:'button','aria-pressed':String($('w-src').value===s), class:'t-'+({Semplificato:'sem',Quotidiano:'quo',Tecnico:'tec'})[s], onclick:()=>{ $('w-src').value = $('w-src').value===s ? '' : s; renderWords(); }}, s)));
   const fb = $('wfilter'); fb.textContent = '';
   [['all','Tutte'],['todo','Da imparare'],['got','Imparate']].forEach(([k,l]) => fb.append(el('button',{type:'button','aria-pressed':String(wFilter===k), onclick:()=>{ wFilter = k; renderWords(); }}, l)));
   $('w-hide').setAttribute('aria-pressed', String(hideTr));
   $('w-hide').textContent = hideTr ? 'Mostra traduzioni' : 'Nascondi traduzioni';
   const q = $('w-q').value.trim().toLowerCase();
-  const list = all.filter(w => (wFilter==='all' || (wFilter==='got')===w.got) && (!q || (w.w+' '+w.t+' '+w.src).toLowerCase().includes(q))).reverse();
+  const list = all.filter(w => (wFilter==='all' || (wFilter==='got')===w.got) && (!q || (w.w+' '+w.t+' '+w.ex+' '+w.src).toLowerCase().includes(q))).reverse();
   const ul = $('words'); ul.textContent = '';
   if(!list.length){ ul.append(el('li',{class:'empty'}, all.length ? 'Nessuna parola con questo filtro.' : 'Ancora nessuna parola. Aggiungi la prima qui sopra: parola, traduzione se la sai, e da dove viene.')); return; }
   const put = (ws, ev) => saveState({words: ws}, ev);
   list.forEach(w => {
     const tr = w.t
-      ? el('button',{type:'button', class:'tr'+(hideTr?' hid':''), 'aria-label': hideTr ? 'Mostra la traduzione di '+w.w : null, onclick:e=>e.currentTarget.classList.remove('hid')}, w.t)
-      : el('button',{type:'button', class:'tr', onclick:()=>startEdit(w)}, 'aggiungi traduzione');
+      ? el('div',{class:'tr'+(hideTr?' hid':''), role:'button', tabindex:'0', 'aria-label': hideTr ? 'Mostra la traduzione di '+w.w : null, onclick:e=>e.currentTarget.classList.remove('hid')}, renderSenses(w))
+      : w.prop
+        ? el('div',{class:'prop'}, el('span',{class:'hint'}, 'Proposta automatica, da controllare'), renderSenses(w.prop), el('div',{class:'row'},
+            el('button',{type:'button', class:'btn solid', onclick:()=>{ put(all.map(x => { if(x.id!==w.id) return x; const o = Object.assign({}, x, {t:w.prop.t, ex:w.prop.ex||''}); delete o.prop; return o; }), 'proposta accettata: '+w.w); }}, 'Accetta'),
+            el('button',{type:'button', class:'ghost', onclick:()=>startEdit(Object.assign({}, w, w.prop))}, 'Correggi'),
+            el('button',{type:'button', class:'ghost', onclick:()=>{ put(all.map(x => { if(x.id!==w.id) return x; const o = Object.assign({}, x); delete o.prop; return o; }), 'proposta scartata: '+w.w); }}, 'Scarta')))
+        : el('button',{type:'button', class:'tr add-tr', onclick:()=>startEdit(w)}, 'aggiungi traduzione ed esempio');
     ul.append(el('li',{class:'word'+(w.got?' got':'')},
-      el('div',{class:'main'}, el('span',{class:'w'}, w.w), tr),
+      el('div',{class:'main'}, el('span',{class:'w'}, w.w)), tr,
       el('div',{class:'meta'}, w.src ? el('span',{class:'loc'}, w.src) : null, el('span',{}, fmtDay(w.date)),
         w.t && !w.got ? el('span',{}, !w.due ? '· nuova' : w.due<=TODAY ? '· da ripassare oggi' : '· ripasso tra '+fmtIvl(daysBetween(TODAY,w.due))) : null,
         el('div',{class:'acts'},
@@ -1176,24 +1221,26 @@ function renderWords(){
   });
 }
 function startEdit(w){
-  editId = w.id; $('w-word').value = w.w; $('w-tr').value = w.t; $('w-src').value = w.src;
+  editId = w.id; $('w-word').value = w.w; $('w-tr').value = w.t; $('w-ex').value = w.ex || ''; $('w-src').value = w.src; $('w-autonote').hidden = true; renderWords();
   $('w-save').textContent = 'Salva modifiche'; $('w-cancel').hidden = false; $('h-addw').textContent = 'Modifica parola';
   $('h-addw').scrollIntoView({block:'start'}); (w.t ? $('w-word') : $('w-tr')).focus();
 }
 function endEdit(){
-  editId = null; $('w-word').value = ''; $('w-tr').value = '';
+  editId = null; $('w-word').value = ''; $('w-tr').value = ''; $('w-ex').value = ''; $('w-src').value = ''; $('w-autonote').hidden = true;
   $('w-save').textContent = 'Aggiungi parola'; $('w-cancel').hidden = true; $('h-addw').textContent = 'Nuova parola';
 }
 $('w-cancel').onclick = () => { endEdit(); renderWords(); };
 $('wform').onsubmit = e => {
   e.preventDefault();
-  const w = $('w-word').value.trim(), t = $('w-tr').value.trim(), src = $('w-src').value.trim();
+  const w = $('w-word').value.trim(), t = $('w-tr').value.trim(), ex = $('w-ex').value.trim(), src = $('w-src').value.trim();
   if(!w) return $('w-word').focus();
   let ws = wordsOf();
-  if(editId) ws = ws.map(x => x.id===editId ? Object.assign({}, x, {w, t, src}) : x);
-  else ws = ws.slice(-499).concat({id: Date.now().toString(36), w, t, src, date: TODAY, got:false});
+  const id = editId || Date.now().toString(36);
+  if(editId) ws = ws.map(x => { if(x.id!==editId) return x; const o = Object.assign({}, x, {w, t, ex, src}); if(t) delete o.prop; return o; });
+  else ws = ws.slice(-499).concat({id, w, t, ex, src, date: TODAY, got:false});
   const edited = !!editId; endEdit();
   saveState({words: ws}, (edited ? 'parola modificata: ' : 'parola aggiunta: ')+w+(t ? ' = '+t : '')); if(document.activeElement) document.activeElement.blur();
+  if(!t) autoPropose(id, w);      // senza traduzione: la cerco io, la trovi da controllare nell'elenco
   const b = $('w-save'); b.textContent = '✓ '+(edited ? 'Aggiornata' : 'Aggiunta'); b.classList.add('ok');
   setTimeout(() => { b.classList.remove('ok'); if(!editId) b.textContent = 'Aggiungi parola'; }, 1300);
 };
@@ -1216,8 +1263,19 @@ $('qform').onsubmit = e => {
   e.preventDefault(); const w = $('q-word').value.trim(); if(!w) return $('q-word').focus();
   // senza la chiave la parola resterebbe solo in questa copia (per esempio se il link si apre in Safari invece che dall'icona nella Home): meglio dirlo che perderla
   if(!token){ const m = $('sheet-msg'); m.textContent = 'Questa copia dell’app non è collegata ai tuoi dati: la parola non verrebbe salvata. Aprila dall’icona nella Home.'; m.hidden = false; return; }
-  saveState({words: wordsOf().slice(-499).concat({id: Date.now().toString(36), w, t:'', src: (state && state.tec && state.tec.topic) || '', date: TODAY, got:false})}, 'parola al volo: '+w);
+  const id = Date.now().toString(36);
+  saveState({words: wordsOf().slice(-499).concat({id, w, t:'', ex:'', src:'', date: TODAY, got:false})}, 'parola al volo: '+w);      // nessuna provenienza: la scegli dopo, se vuoi
   closeSheet(); toast('Parola aggiunta: '+w);
+  autoPropose(id, w);
+};
+$('w-auto').onclick = async () => {
+  const w = $('w-word').value.trim(), note = $('w-autonote'); if(!w) return $('w-word').focus();
+  note.hidden = false; note.textContent = 'Cerco…';
+  const p = await proposeFor(w);
+  if(!p){ note.textContent = 'Non ho trovato niente (o manca la rete): scrivila tu.'; return; }
+  if(!$('w-tr').value.trim()) $('w-tr').value = p.t;
+  if(!$('w-ex').value.trim() && p.ex) $('w-ex').value = p.ex;
+  note.textContent = 'Proposta automatica: controllala e correggila prima di salvare.';
 };
 $('w-q').oninput = renderWords;
 $('w-hide').onclick = () => { hideTr = !hideTr; ls.set('hideTr', hideTr ? '1' : '0'); renderWords(); };
@@ -1415,9 +1473,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-2';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-3';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.14-3', ['Parole: ogni parola ha traduzione con più significati numerati e un esempio per ciascuno; anche nelle carte del ripasso.', '«Proponi traduzione ed esempio» cerca da solo (gratis): la proposta resta da controllare e non entra nel ripasso finché non la accetti.', 'Niente più provenienza automatica: restano solo Semplificato, Quotidiano e Tecnico, a scelta.', 'Progressi riordinato: settimana con missioni, ultimi traguardi, percorsi e mesi a tendina. Gli spezzoni chiusi sono in Guida.', 'La linea del minimo sta sotto la tacca dei 15′.']],
   ['2026.11.14-2', ['Salvataggio più prudente quando l’automazione scrive nello stesso momento.', 'Senza rete «Aggiorna l’app» non cancella più i file salvati.', 'Caratteri e icone si aprono subito, senza ricontrollare ogni volta.']],
   ['2026.11.14-1', ['Salvataggio più sicuro quando l’automazione scrive nello stesso momento.', 'Senza rete «Aggiorna l’app» non cancella più i file salvati.', 'Caratteri e icone si aprono subito, senza ricontrollare ogni volta.']],
   ['2026.11.13-1', ['Obiettivo di 30′ per tipo in tutti i giorni tranne la partita (15′).', 'Sulle tacche, la linea dorata tratteggiata segna il minimo di 15′.', 'Il jolly sta in Oggi, accanto al livello: tocca lo scudo per sapere come funziona.', 'Missioni di oggi con punti, giornata piena e due nuovi percorsi: Giornate piene e Punti.', 'In Oggi tolte le scritte sul turno e il riepilogo nel report; in Guida le impostazioni sono in fondo e le novità a tendina.']],

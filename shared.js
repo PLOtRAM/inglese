@@ -46,6 +46,16 @@ function pickEpIn(feed, name){
 }
 const epTitle = e => e.title.replace(/^at the money:\s*/i,'');
 const epLabel = (name, e) => name+' · '+epTitle(e)+' ('+e.min+'′)';
+// Parola: significati e esempi. `t` = significati separati da «;» (sinonimi con la virgola); `ex` = una riga per esempio, «frase inglese — traduzione» (vale anche «|»).
+// Se i significati e gli esempi sono in numero uguale si abbinano uno a uno, altrimenti prima i significati e poi gli esempi.
+function senses(w){
+  const meanings = ((w && w.t) || '').split(/\s*;\s*/).filter(Boolean);
+  const examples = ((w && w.ex) || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const p = l.split(/\s+[—–|]\s+/); return {e:p[0], i:p.slice(1).join(' — ')}; });
+  return {meanings, examples, paired: meanings.length > 1 && meanings.length === examples.length};
+}
+// Provenienza: solo i tre pilastri. I dati vecchi (Peppa Pig, The Office, nomi dei podcast) si leggono come il pilastro giusto.
+const PILLARS = ['Semplificato','Quotidiano','Tecnico'];
+const pillarOf = s => PILLARS.includes(s) ? s : s==='Peppa Pig' ? 'Semplificato' : s==='The Office' ? 'Quotidiano' : TOPICS.includes(s) ? 'Tecnico' : '';
 // Parole da ripassare in una certa data
 const dueOf = (words, today) => (words || []).filter(w => w.t && !w.got && (!w.due || w.due<=today));
 
@@ -188,4 +198,4 @@ function achieve(days, state, today, goalToday){
   return {vals, earned, week: weekMissions(cur), weekGold: gold(cur)};
 }
 
-if(typeof module!=='undefined') module.exports = {dayQuests, DAY_QUESTS, FULL_BONUS, minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf};
+if(typeof module!=='undefined') module.exports = {dayQuests, DAY_QUESTS, FULL_BONUS, minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf, senses, PILLARS, pillarOf};

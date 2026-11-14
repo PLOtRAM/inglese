@@ -29,4 +29,7 @@ woffs.forEach(f => { const b = fs.readFileSync(path.join(__dirname, '..', f)); a
 ['fab','sheet','qform','q-word','missions','paths','metapaths','lastach','setup','setupsum','appver','updbtn','whatsnew','now','mixer','report','piano','podsum','themes','dayq','p-jolly','jolly']
   .forEach(id => assert.ok(html.includes('id="'+id+'"'), 'in index.html manca #'+id));
 
+// ogni $('id') scritto per intero nel codice esiste nel markup: se manca, renderAll si ferma e l'app resta vuota
+[...new Set([...html.matchAll(/\$\('([\w-]+)'\)/g)].map(m => m[1]))].forEach(id => assert.ok(html.includes('id="'+id+'"'), 'il codice cerca $(\''+id+'\') ma nel markup non c\'è'));
+
 console.log('app: controlli ok');

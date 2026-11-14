@@ -41,6 +41,17 @@ assert.equal(S.achieve(full30, wd, '2026-11-12', 45).vals.piene, 0);            
 assert.equal(S.planOf(w, sun, 0).kind, 'Partita');
 assert.equal(S.planOf({week:{monday:'2026-11-02', type:'dom'}}, mon, 2).target, 30);   // tipo scaduto: vale solo la sua settimana
 
+// senses: significati con «;», esempi uno per riga; abbinati solo se sono in numero uguale
+let SN = S.senses({t:'Tomba; grave, serio', ex:'They visited his grave. — Hanno visitato la tomba.\nThe situation is grave. | La situazione è grave.'});
+assert.deepEqual(SN.meanings, ['Tomba', 'grave, serio']); assert.equal(SN.paired, true);
+assert.deepEqual(SN.examples[1], {e:'The situation is grave.', i:'La situazione è grave.'});
+SN = S.senses({t:'Fronte', ex:'Her forehead hurt.'});
+assert.equal(SN.paired, false); assert.deepEqual(SN.examples, [{e:'Her forehead hurt.', i:''}]);
+assert.deepEqual(S.senses({}), {meanings:[], examples:[], paired:false});
+// pillarOf: i vecchi nomi diventano i tre pilastri, il resto resta senza provenienza
+assert.equal(S.pillarOf('The Office'), 'Quotidiano'); assert.equal(S.pillarOf('Peppa Pig'), 'Semplificato');
+assert.equal(S.pillarOf('Big Take'), 'Tecnico'); assert.equal(S.pillarOf('Tecnico'), 'Tecnico'); assert.equal(S.pillarOf(''), ''); assert.equal(S.pillarOf('altro'), '');
+
 // dueOf: solo parole non ancora sapute e scadute
 const words = [{t:'a'}, {t:'b', due:'2026-11-13'}, {t:'c', due:'2026-11-12'}, {t:'d', got:true}, {due:'2026-01-01'}];
 assert.deepEqual(S.dueOf(words, '2026-11-12').map(x => x.t), ['a', 'c']);
