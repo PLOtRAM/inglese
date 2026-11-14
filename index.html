@@ -176,6 +176,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
 .fc-t .sens{justify-items:center;text-align:center;margin-top:8px}
 .fc-t .exm{border:0;padding:0;margin:0}
 .pillar{display:grid;gap:6px}
+#w-autonote button{margin:4px 6px 0 0}
 .chips button.t-sem[aria-pressed=true]{background:var(--sem);border-color:var(--sem)}
 .chips button.t-quo[aria-pressed=true]{background:var(--quo);border-color:var(--quo)}
 .chips button.t-tec[aria-pressed=true]{background:var(--tec);border-color:var(--tec)}
@@ -1535,9 +1536,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-5';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-6';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.14-6', ['I suggerimenti di scrittura hanno un po’ di spazio tra un pulsante e l’altro.']],
   ['2026.11.14-5', ['Controllo delle parole che scrivi come le senti: se non esistono, ti propone quelle vere più vicine (es. «complay» → comply, complain); «È giusta così» per tenerla.', 'Traduzione proposta molto migliore: più significati per categoria (nome, verbo…) e frasi d’esempio tradotte.', 'Jolly: se ne guadagna uno ogni 7 giorni di fila col minimo, al massimo 2. Non arriva più da solo ogni mese; quello che avevi resta.']],
   ['2026.11.14-4', ['La proposta automatica di traduzione non appare mentre stai scrivendo e non si fida delle risposte d’errore del servizio.']],
   ['2026.11.14-3', ['Parole: ogni parola ha traduzione con più significati numerati e un esempio per ciascuno; anche nelle carte del ripasso.', '«Proponi traduzione ed esempio» cerca da solo (gratis): la proposta resta da controllare e non entra nel ripasso finché non la accetti.', 'Niente più provenienza automatica: restano solo Semplificato, Quotidiano e Tecnico, a scelta.', 'Progressi riordinato: settimana con missioni, ultimi traguardi, percorsi e mesi a tendina. Gli spezzoni chiusi sono in Guida.', 'La linea del minimo sta sotto la tacca dei 15′.']],
