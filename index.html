@@ -1415,10 +1415,11 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-1';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-2';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
-  ['2026.11.14-1', ['Salvataggio più sicuro quando l’automazione scrive nello stesso momento: non si perde più niente.', 'Senza rete «Aggiorna l’app» non cancella più i file salvati.', 'Caratteri e icone si aprono subito, senza ricontrollare ogni volta.']],
+  ['2026.11.14-2', ['Salvataggio più prudente quando l’automazione scrive nello stesso momento.', 'Senza rete «Aggiorna l’app» non cancella più i file salvati.', 'Caratteri e icone si aprono subito, senza ricontrollare ogni volta.']],
+  ['2026.11.14-1', ['Salvataggio più sicuro quando l’automazione scrive nello stesso momento.', 'Senza rete «Aggiorna l’app» non cancella più i file salvati.', 'Caratteri e icone si aprono subito, senza ricontrollare ogni volta.']],
   ['2026.11.13-1', ['Obiettivo di 30′ per tipo in tutti i giorni tranne la partita (15′).', 'Sulle tacche, la linea dorata tratteggiata segna il minimo di 15′.', 'Il jolly sta in Oggi, accanto al livello: tocca lo scudo per sapere come funziona.', 'Missioni di oggi con punti, giornata piena e due nuovi percorsi: Giornate piene e Punti.', 'In Oggi tolte le scritte sul turno e il riepilogo nel report; in Guida le impostazioni sono in fondo e le novità a tendina.']],
   ['2026.11.12-10', ['I caratteri sono dentro l’app: niente più attesa o caratteri diversi senza rete.']],
   ['2026.11.12-9', ['Parola al volo dal tasto Azione: crea un Comando Rapido che apre «…/inglese/#parola».', 'Nella notifica della sera compare la settimana d’oro (venerdì e domenica) e, la domenica, il livello se c’è posto.', 'Qui in Guida vedi cosa è cambiato a ogni aggiornamento.']],
