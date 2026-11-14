@@ -66,6 +66,7 @@ assert.deepEqual([1, 2, 3].map(g => S.srs({ivl:10, ease:2.5}, undefined, g, -4, 
 R = S.srs({ivl:20, ease:2.3, lapses:1}, undefined, 0, 0, 0);
 assert.deepEqual([R.ivl, Math.round(R.ease*100)/100, R.lapses, R.again, R.step], [1, 2.1, 2, true, 1]);                        // errore: 1 giorno, facilità −0,2, un errore in più
 assert.deepEqual([S.srs({}, 0, 3, 0, 0).ivl, S.srs({}, 1, 2, 0, 0).ivl, S.srs({}, undefined, 2, 0, 0).again], [3, 1, true]);   // carta nuova: Facile 4 giorni con fuzz, Bene al secondo passo 1 giorno
+assert.equal(S.srs({ivl:1, ease:2}, 1, 3, 0, 0).ivl, 2); assert.equal(S.srs({ivl:1, ease:2}, 1, 2, 0, 0).ivl, 1);    // dopo un errore: Bene 1 giorno, Facile 2
 for(let ivl = 1; ivl <= 60; ivl++) for(const ease of [1.3, 2.5, 3]) for(const late of [0, 1, 5]) for(const f of [0, .5, .99]){
   const [h, g, e] = [1, 2, 3].map(x => S.srs({ivl, ease}, undefined, x, late, f).ivl); assert.ok(h < g && g < e, 'ordine '+[ivl, ease, late, f]);
 }

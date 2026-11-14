@@ -1534,10 +1534,11 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-9';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-10';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
-  ['2026.11.14-9', ['Il ripasso delle parole segue l’algoritmo di Anki più da vicino: bonus se rivedi in ritardo, ripassi in anticipo calcolati giorni veri, intervalli leggermente variati e Bene sempre sopra Difficile.']],
+  ['2026.11.14-10', ['Dopo un errore, «Facile» dà un giorno in più di «Bene», come in Anki.']],
+  ['2026.11.14-9', ['Il ripasso delle parole segue l’algoritmo di Anki più da vicino: bonus se rivedi in ritardo, intervalli leggermente variati e Bene sempre sopra Difficile.']],
   ['2026.11.14-8', ['Con più significati la proposta automatica dà un esempio tradotto per ciascun significato, quando li trova.']],
   ['2026.11.14-7', ['Se riscrivi a mano una parola con dei suggerimenti, i suggerimenti spariscono.', 'Con più significati la proposta automatica dà un solo esempio, così non finisce sotto il significato sbagliato.']],
   ['2026.11.14-6', ['I suggerimenti di scrittura hanno un po’ di spazio tra un pulsante e l’altro.']],

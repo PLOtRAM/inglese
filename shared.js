@@ -92,7 +92,7 @@ function srs(w, step, g, late, f){
   step = step||0;
   if(g===0) return {ivl, ease, lapses, again:true, step:0};
   if(g===1) return {ivl, ease, lapses, again:true, step};
-  if(g===3 || step>=1) return {ivl: ivl || (g===3 ? fuzzIvl(4, 1, f) : 1), ease, lapses, again:false};
+  if(g===3 || step>=1) return {ivl: ivl ? (g===3 ? ivl+1 : ivl) : (g===3 ? fuzzIvl(4, 1, f) : 1), ease, lapses, again:false};      // dopo un errore Facile dà un giorno in più (come Anki)
   return {ivl, ease, lapses, again:true, step:1};
 }
 // Parole da ripassare in una certa data
