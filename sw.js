@@ -10,6 +10,8 @@ self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Pr
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if(e.request.method!=='GET' || u.origin!==location.origin) return;
+  // caratteri e icone non cambiano: copia salvata subito, rete solo se manca. shortcut: se ne cambi uno, alza CACHE qui sopra.
+  if(/\/(fonts\/|icon-)/.test(u.pathname)) return e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(n => { const copy = n.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return n; })));
   e.respondWith(fetch(e.request, {cache:'no-cache'}).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })
     .catch(() => caches.match(e.request, {ignoreSearch:true}).then(r => r || caches.match('./'))));
 });
