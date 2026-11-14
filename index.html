@@ -1172,15 +1172,30 @@ const flat = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 const GT = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=it&dt=t&';
 const POS = {noun:'nome', verb:'verbo', adjective:'aggettivo', adverb:'avverbio'};
 const gtText = j => (j[0] || []).map(x => (x && x[0]) || '').join('').trim();
+// Traduce più frasi con UNA sola richiesta (una per riga): il servizio risponde 429 se le richieste partono a raffica. Se le righe non tornano, nessuna traduzione.
+async function gtMany(arr){
+  if(!arr.length) return [];
+  const j = await apiJson(GT+'q='+encodeURIComponent(arr.join('\n'))), out = []; let cur = '';
+  (j[0] || []).forEach(s => { cur += s[0] || ''; if(String(s[1] || '').endsWith('\n')){ out.push(cur.trim()); cur = ''; } });
+  if(cur.trim()) out.push(cur.trim());
+  return out.length===arr.length ? out : arr.map(() => '');
+}
 async function proposeGoogle(word){
   const j = await apiJson(GT+'dt=bd&dt=ex&q='+encodeURIComponent(word)), poss = j[1] || [], many = poss.length > 1, ms = [], low = word.toLowerCase();
   poss.forEach(p => { const d = p[2] || [], top = d.length ? d[0][3] : 0; d.forEach((x,i) => { const m = x[0]+(many ? ' ('+(POS[p[0]] || p[0])+')' : ''); if(ms.length < 4 && x[0].toLowerCase()!==low && (i===0 || x[3] >= top*.25) && !ms.includes(m)) ms.push(m); }); });
   const main = gtText(j); if(!ms.length && main && main.toLowerCase()!==low) ms.push(main);
   if(!ms.length) return null;
+  // Esempi: un pool di frasi inglesi (Google + Free Dictionary), tutte tradotte; a ogni significato si dà la frase la cui traduzione contiene la sua radice, così ogni significato ha il suo esempio.
   const exArr = j.find(x => Array.isArray(x) && Array.isArray(x[0]) && Array.isArray(x[0][0]) && /<b>/.test(String(x[0][0][0])));
-  const es = (exArr ? exArr[0] : []).slice(0, ms.length > 1 ? 1 : 2).map(x => String(x[0]).replace(/<\/?b>/g, ''));
-  const its = await Promise.all(es.map(e => apiJson(GT+'q='+encodeURIComponent(e)).then(gtText, () => '')));
-  return {t: ms.join('; '), ex: es.map((e,i) => e+(its[i] ? ' — '+its[i] : '')).join('\n')};
+  let pool = (exArr ? exArr[0] : []).slice(0, 5).map(x => String(x[0]).replace(/<\/?b>/g, ''));
+  if(/^[a-z][a-z'-]*$/i.test(word)) try{ const d = await apiJson('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word)); pool = pool.concat(d[0].meanings.flatMap(m => m.definitions).map(x => x.example).filter(Boolean).slice(0, 4)); }catch(_){}
+  pool = [...new Map(pool.map(e => [e.toLowerCase(), e])).values()].slice(0, 8);
+  const its = await gtMany(pool).catch(() => pool.map(() => ''));
+  const stem = m => { const w = m.replace(/\s*\(.*\)\s*$/, '').toLowerCase().split(/\s+/)[0]; return w.slice(0, Math.max(4, w.length - 2)); };
+  const used = new Set(), line = i => pool[i]+' — '+its[i];
+  const pick = ms.map(m => { const s = stem(m); let i = pool.findIndex((_, k) => !used.has(k) && its[k] && its[k].toLowerCase().includes(s)); if(i < 0) i = pool.findIndex((_, k) => !used.has(k) && its[k]); if(i >= 0) used.add(i); return i; });
+  const ex = ms.length > 1 ? pick.filter(i => i >= 0).map(line) : pool.map((_, i) => i).filter(i => its[i]).slice(0, 2).map(line);
+  return {t: ms.join('; '), ex: ex.join('\n')};
 }
 const proposeFor = async word => { try{ const p = await proposeGoogle(word); if(p) return p; }catch(_){} return proposeMM(word); };
 async function proposeMM(word){
@@ -1536,9 +1551,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-7';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-8';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.14-8', ['Con più significati la proposta automatica dà un esempio tradotto per ciascun significato, quando li trova.']],
   ['2026.11.14-7', ['Se riscrivi a mano una parola con dei suggerimenti, i suggerimenti spariscono.', 'Con più significati la proposta automatica dà un solo esempio, così non finisce sotto il significato sbagliato.']],
   ['2026.11.14-6', ['I suggerimenti di scrittura hanno un po’ di spazio tra un pulsante e l’altro.']],
   ['2026.11.14-5', ['Controllo delle parole che scrivi come le senti: se non esistono, ti propone quelle vere più vicine (es. «complay» → comply, complain); «È giusta così» per tenerla.', 'Traduzione proposta molto migliore: più significati per categoria (nome, verbo…) e frasi d’esempio tradotte.', 'Jolly: se ne guadagna uno ogni 7 giorni di fila col minimo, al massimo 2. Non arriva più da solo ogni mese; quello che avevi resta.']],
