@@ -1167,6 +1167,7 @@ const flat = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 async function proposeFor(word){
   try{
     const j = await apiJson('https://api.mymemory.translated.net/get?langpair=en|it&q='+encodeURIComponent(word)), seen = new Set(), ts = [];
+    if(+j.responseStatus!==200) return null;      // quota finita: il servizio risponde con una frase di avviso, non va proposta come traduzione
     [{translation: j.responseData && j.responseData.translatedText}].concat((j.matches || []).filter(m => flat(m.segment || '')===flat(word))).forEach(m => {
       const t = (m.translation || '').replace(/[.!]+$/, '').trim(), k = t.toLowerCase();
       if(t && k!==word.toLowerCase() && !seen.has(k) && ts.length < 3){ seen.add(k); ts.push(t); }
@@ -1176,15 +1177,20 @@ async function proposeFor(word){
     if(/^[a-z][a-z'-]*$/i.test(word)) try{
       const d = await apiJson('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
       const e = d[0].meanings.flatMap(m => m.definitions).map(x => x.example).find(Boolean);
-      if(e){ const tj = await apiJson('https://api.mymemory.translated.net/get?langpair=en|it&q='+encodeURIComponent(e)); ex = e+' — '+((tj.responseData && tj.responseData.translatedText) || ''); }
+      if(e){ const tj = await apiJson('https://api.mymemory.translated.net/get?langpair=en|it&q='+encodeURIComponent(e)); ex = +tj.responseStatus===200 ? e+' — '+tj.responseData.translatedText : e; }
     }catch(_){}
     return {t: ts.join(', '), ex};
   }catch(_){ return null; }
 }
 async function autoPropose(id, word){      // dopo il salvataggio: la proposta si aggancia alla parola giusta, se c'è ancora e non ha già una traduzione
   const p = await proposeFor(word); if(!p) return;
-  const ws = wordsOf(), cur = ws.find(x => x.id===id); if(!cur || cur.t || cur.prop) return;
-  saveState({words: ws.map(x => x.id===id ? Object.assign({}, x, {prop:p}) : x)}, 'proposta automatica: '+word);
+  let tries = 0;
+  const apply = () => {
+    const a = document.activeElement; if(a && /INPUT|TEXTAREA/.test(a.tagName) && ++tries < 20) return setTimeout(apply, 3000);      // non ridisegnare sotto il cursore mentre scrivi
+    const ws = wordsOf(), cur = ws.find(x => x.id===id); if(!cur || cur.t || cur.prop) return;
+    saveState({words: ws.map(x => x.id===id ? Object.assign({}, x, {prop:p}) : x)}, 'proposta automatica: '+word);
+  };
+  apply();
 }
 function renderWords(){
   const all = wordsOf(), learned = all.filter(w => w.got).length;
@@ -1473,9 +1479,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-3';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-4';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.14-4', ['La proposta automatica di traduzione non appare mentre stai scrivendo e non si fida delle risposte d’errore del servizio.']],
   ['2026.11.14-3', ['Parole: ogni parola ha traduzione con più significati numerati e un esempio per ciascuno; anche nelle carte del ripasso.', '«Proponi traduzione ed esempio» cerca da solo (gratis): la proposta resta da controllare e non entra nel ripasso finché non la accetti.', 'Niente più provenienza automatica: restano solo Semplificato, Quotidiano e Tecnico, a scelta.', 'Progressi riordinato: settimana con missioni, ultimi traguardi, percorsi e mesi a tendina. Gli spezzoni chiusi sono in Guida.', 'La linea del minimo sta sotto la tacca dei 15′.']],
   ['2026.11.14-2', ['Salvataggio più prudente quando l’automazione scrive nello stesso momento.', 'Senza rete «Aggiorna l’app» non cancella più i file salvati.', 'Caratteri e icone si aprono subito, senza ricontrollare ogni volta.']],
   ['2026.11.14-1', ['Salvataggio più sicuro quando l’automazione scrive nello stesso momento.', 'Senza rete «Aggiorna l’app» non cancella più i file salvati.', 'Caratteri e icone si aprono subito, senza ricontrollare ogni volta.']],
