@@ -1178,7 +1178,7 @@ async function proposeGoogle(word){
   const main = gtText(j); if(!ms.length && main && main.toLowerCase()!==low) ms.push(main);
   if(!ms.length) return null;
   const exArr = j.find(x => Array.isArray(x) && Array.isArray(x[0]) && Array.isArray(x[0][0]) && /<b>/.test(String(x[0][0][0])));
-  const es = (exArr ? exArr[0] : []).slice(0, 2).map(x => String(x[0]).replace(/<\/?b>/g, ''));
+  const es = (exArr ? exArr[0] : []).slice(0, ms.length > 1 ? 1 : 2).map(x => String(x[0]).replace(/<\/?b>/g, ''));
   const its = await Promise.all(es.map(e => apiJson(GT+'q='+encodeURIComponent(e)).then(gtText, () => '')));
   return {t: ms.join('; '), ex: es.map((e,i) => e+(its[i] ? ' — '+its[i] : '')).join('\n')};
 }
@@ -1291,7 +1291,7 @@ $('wform').onsubmit = e => {
   if(!w) return $('w-word').focus();
   let ws = wordsOf();
   const id = editId || Date.now().toString(36);
-  if(editId) ws = ws.map(x => { if(x.id!==editId) return x; const o = Object.assign({}, x, {w, t, ex, src}); if(t) delete o.prop; return o; });
+  if(editId) ws = ws.map(x => { if(x.id!==editId) return x; const o = Object.assign({}, x, {w, t, ex, src}); delete o.maybe; if(t) delete o.prop; return o; });      // l'hai riscritta tu: i vecchi suggerimenti non valgono più
   else ws = ws.slice(-499).concat({id, w, t, ex, src, date: TODAY, got:false});
   const edited = !!editId; endEdit();
   saveState({words: ws}, (edited ? 'parola modificata: ' : 'parola aggiunta: ')+w+(t ? ' = '+t : '')); if(document.activeElement) document.activeElement.blur();
@@ -1536,9 +1536,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-6';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-7';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.14-7', ['Se riscrivi a mano una parola con dei suggerimenti, i suggerimenti spariscono.', 'Con più significati la proposta automatica dà un solo esempio, così non finisce sotto il significato sbagliato.']],
   ['2026.11.14-6', ['I suggerimenti di scrittura hanno un po’ di spazio tra un pulsante e l’altro.']],
   ['2026.11.14-5', ['Controllo delle parole che scrivi come le senti: se non esistono, ti propone quelle vere più vicine (es. «complay» → comply, complain); «È giusta così» per tenerla.', 'Traduzione proposta molto migliore: più significati per categoria (nome, verbo…) e frasi d’esempio tradotte.', 'Jolly: se ne guadagna uno ogni 7 giorni di fila col minimo, al massimo 2. Non arriva più da solo ogni mese; quello che avevi resta.']],
   ['2026.11.14-4', ['La proposta automatica di traduzione non appare mentre stai scrivendo e non si fida delle risposte d’errore del servizio.']],
