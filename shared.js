@@ -56,6 +56,45 @@ function senses(w){
 // Provenienza: solo i tre pilastri. I dati vecchi (Peppa Pig, The Office, nomi dei podcast) si leggono come il pilastro giusto.
 const PILLARS = ['Semplificato','Quotidiano','Tecnico'];
 const pillarOf = s => PILLARS.includes(s) ? s : s==='Peppa Pig' ? 'Semplificato' : s==='The Office' ? 'Quotidiano' : TOPICS.includes(s) ? 'Tecnico' : '';
+/* ---------- Ripasso delle parole: l'algoritmo di Anki (scheduler classico SM-2, letto in rslib/src/scheduler/states di ankitects/anki) ----------
+   Uguale ad Anki: facilità iniziale 2,5 (minimo 1,3; Di nuovo −0,2, Difficile −0,15, Facile +0,15), Difficile ×1,2, Facile ×1,3, intervallo dopo un errore 1 giorno,
+   primo intervallo 1 giorno (4 con Facile), bonus per il ritardo (metà dei giorni di ritardo con Bene, tutti con Facile), regole per i ripassi in anticipo,
+   «fuzz» (±) sugli intervalli da 2,5 giorni in su, sempre Difficile < Bene < Facile.
+   Diverso da Anki: i passi di 1 e 10 minuti non hanno attese vere (restano dentro la sessione), nessun limite di carte al giorno, nessuna regola per le parole «sanguisuga». */
+function fuzzSeed(s){      // numero fisso in [0,1) per parola e ripasso: l'etichetta del tasto e la risposta danno lo stesso intervallo
+  let h = 2166136261; for(const c of String(s)){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  h = Math.imul(h ^ (h>>>15), 2246822507); return (((h ^ (h>>>13)) >>> 0)) / 4294967296;
+}
+function fuzzIvl(iv, min, f){      // porta di constrained_fuzz_bounds / with_review_fuzz
+  const max = 36500; min = Math.min(min, max); iv = Math.min(max, Math.max(min, iv));
+  let d = 0; if(iv >= 2.5){ d = 1; [[2.5,7,.15],[7,20,.1],[20,1e9,.05]].forEach(([s,e,k]) => { d += k*Math.max(0, Math.min(iv,e)-s); }); }
+  let lo = Math.min(max, Math.max(min, Math.round(iv-d))), up = Math.min(max, Math.max(min, Math.round(iv+d)));
+  if(up===lo && up>2 && up<max) up = lo+1;
+  return Math.floor(lo + f*(1+up-lo));
+}
+// g: 0 di nuovo, 1 difficile, 2 bene, 3 facile. step: passo nella sessione (undefined = carta già in ripasso). late: giorni di ritardo (negativo = in anticipo). f: fuzz fisso (solo per i test).
+function srs(w, step, g, late, f){
+  let ivl = w.ivl||0, ease = w.ease||2.5; const lapses = w.lapses||0;
+  late = late||0; if(f==null) f = fuzzSeed(w.id+':'+(w.reps||0));
+  if(ivl>0 && step===undefined){
+    if(g===0) return {ivl:1, ease:Math.max(1.3, ease-.2), lapses:lapses+1, again:true, step:1};
+    const cur = Math.max(ivl, 1); let hard, good, easy;
+    if(late >= 0){
+      hard = fuzzIvl(cur*1.2, ivl+1, f);
+      good = fuzzIvl((cur + late/2)*ease, hard+1, f);
+      easy = fuzzIvl((cur + late)*ease*1.3, good+1, f);
+    } else {      // ripasso in anticipo: Anki conta i giorni passati davvero, non quelli previsti
+      const el = ivl + late, base = Math.max(el*ease, cur);
+      hard = Math.max(1, Math.round(Math.max(el*1.2, cur*.6))); good = Math.max(1, Math.round(base)); easy = Math.max(1, Math.round(base*1.15));
+    }
+    return {ivl: [0, hard, good, easy][g], ease: g===1 ? Math.max(1.3, ease-.15) : g===3 ? ease+.15 : ease, lapses, again:false};
+  }
+  step = step||0;
+  if(g===0) return {ivl, ease, lapses, again:true, step:0};
+  if(g===1) return {ivl, ease, lapses, again:true, step};
+  if(g===3 || step>=1) return {ivl: ivl || (g===3 ? fuzzIvl(4, 1, f) : 1), ease, lapses, again:false};
+  return {ivl, ease, lapses, again:true, step:1};
+}
 // Parole da ripassare in una certa data
 const dueOf = (words, today) => (words || []).filter(w => w.t && !w.got && (!w.due || w.due<=today));
 
@@ -199,4 +238,4 @@ function achieve(days, state, today, goalToday){
   return {vals, earned, week: weekMissions(cur), weekGold: gold(cur)};
 }
 
-if(typeof module!=='undefined') module.exports = {dayQuests, DAY_QUESTS, FULL_BONUS, minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf, senses, PILLARS, pillarOf};
+if(typeof module!=='undefined') module.exports = {dayQuests, DAY_QUESTS, FULL_BONUS, minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf, senses, PILLARS, pillarOf, srs, fuzzIvl, fuzzSeed};

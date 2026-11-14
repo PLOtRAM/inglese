@@ -52,6 +52,24 @@ assert.deepEqual(S.senses({}), {meanings:[], examples:[], paired:false});
 assert.equal(S.pillarOf('The Office'), 'Quotidiano'); assert.equal(S.pillarOf('Peppa Pig'), 'Semplificato');
 assert.equal(S.pillarOf('Big Take'), 'Tecnico'); assert.equal(S.pillarOf('Tecnico'), 'Tecnico'); assert.equal(S.pillarOf(''), ''); assert.equal(S.pillarOf('altro'), '');
 
+// fuzz: stessi numeri dei test di Anki (rslib/src/scheduler/states/fuzz.rs): con fattore 0, 0,5 e 0,99
+[[2.5, 2, 3, 4], [7, 5, 7, 9], [17, 14, 17, 20]].forEach(([iv, a, b, c]) => assert.deepEqual([0, .5, .99].map(f => S.fuzzIvl(iv, 1, f)), [a, b, c]));
+assert.equal(S.fuzzIvl(1.5, 1, .5), 2); assert.equal(S.fuzzIvl(0.1, 1, .5), 1);      // sotto 2,5 giorni niente fuzz
+const sd = S.fuzzSeed('abc:3'); assert.ok(sd >= 0 && sd < 1); assert.equal(sd, S.fuzzSeed('abc:3'));
+// srs: ripasso, come Anki (fuzz fisso a 0)
+let R = S.srs({ivl:1, ease:2.5}, undefined, 2, 0, 0);
+assert.deepEqual([1, 2, 3].map(g => S.srs({ivl:1, ease:2.5}, undefined, g, 0, 0).ivl), [2, 3, 4]);          // Facile parte dal vecchio fattore e sta sopra Bene
+assert.deepEqual([1, 2].map(g => S.srs({ivl:3, ease:1.3}, undefined, g, 0, 0).ivl), [4, 5]);               // Bene sta sopra Difficile
+assert.equal(S.srs({ivl:1, ease:2.5}, undefined, 3, 0, 0).ease, 2.65); assert.equal(S.srs({ivl:1, ease:1.3}, undefined, 1, 0, 0).ease, 1.3);
+assert.equal(S.srs({ivl:10, ease:2.5}, undefined, 2, 0, 0).ivl, 22); assert.equal(S.srs({ivl:10, ease:2.5}, undefined, 2, 4, 0).ivl, 27);   // ritardo: +metà dei giorni
+assert.deepEqual([1, 2, 3].map(g => S.srs({ivl:10, ease:2.5}, undefined, g, -4, 0).ivl), [7, 15, 17]);      // in anticipo: contano i giorni passati davvero
+R = S.srs({ivl:20, ease:2.3, lapses:1}, undefined, 0, 0, 0);
+assert.deepEqual([R.ivl, Math.round(R.ease*100)/100, R.lapses, R.again, R.step], [1, 2.1, 2, true, 1]);                        // errore: 1 giorno, facilità −0,2, un errore in più
+assert.deepEqual([S.srs({}, 0, 3, 0, 0).ivl, S.srs({}, 1, 2, 0, 0).ivl, S.srs({}, undefined, 2, 0, 0).again], [3, 1, true]);   // carta nuova: Facile 4 giorni con fuzz, Bene al secondo passo 1 giorno
+for(let ivl = 1; ivl <= 60; ivl++) for(const ease of [1.3, 2.5, 3]) for(const late of [0, 1, 5]) for(const f of [0, .5, .99]){
+  const [h, g, e] = [1, 2, 3].map(x => S.srs({ivl, ease}, undefined, x, late, f).ivl); assert.ok(h < g && g < e, 'ordine '+[ivl, ease, late, f]);
+}
+
 // dueOf: solo parole non ancora sapute e scadute
 const words = [{t:'a'}, {t:'b', due:'2026-11-13'}, {t:'c', due:'2026-11-12'}, {t:'d', got:true}, {due:'2026-01-01'}];
 assert.deepEqual(S.dueOf(words, '2026-11-12').map(x => x.t), ['a', 'c']);
