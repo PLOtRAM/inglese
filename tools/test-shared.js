@@ -64,6 +64,15 @@ const gap = S.streakOf({'2026-11-10':ok, '2026-11-12':ok}, '2026-11-12');
 assert.equal(gap.streak, 2);
 assert.deepEqual(gap.used, ['2026-11-11']);
 assert.equal(S.streakOf({}, '2026-11-12').streak, 0);
+// jolly: si parte con 1, se ne guadagna uno ogni 7 giorni di fila col minimo, massimo 2
+const run = (from, n) => Object.fromEntries(Array.from({length:n}, (_,i) => { const d = new Date(from+'T12:00'); d.setDate(d.getDate()+i); return [S.ymd(d), ok]; }));
+assert.equal(S.streakOf(run('2026-11-01', 6), '2026-11-06').bank, 1);               // sei giorni: ancora il jolly di partenza
+assert.equal(S.streakOf(run('2026-11-01', 7), '2026-11-07').bank, 2);               // settimo giorno: +1
+assert.equal(S.streakOf(run('2026-11-01', 28), '2026-11-28').bank, 2);              // mai oltre 2
+const hole = Object.assign(run('2026-11-01', 7), run('2026-11-09', 1));             // 7 giorni, buco l'8, poi il 9
+const hs = S.streakOf(hole, '2026-11-09'); assert.equal(hs.streak, 8); assert.deepEqual(hs.used, ['2026-11-08']); assert.equal(hs.bank, 1);
+assert.equal(S.streakOf(Object.assign(run('2026-11-01', 7), run('2026-11-10', 1)), '2026-11-10').streak, 8);   // due buchi di fila: li coprono i 2 jolly
+assert.equal(S.streakOf(Object.assign(run('2026-11-01', 7), run('2026-11-11', 1)), '2026-11-11').streak, 1);   // tre buchi di fila: la serie si rompe
 
 // achieve: percorsi, missioni della settimana, traguardi
 const dayList = (from, n, v) => Object.fromEntries(Array.from({length:n}, (_,i) => { const d = new Date(from+'T12:00'); d.setDate(d.getDate()+i); return [S.ymd(d), Object.assign({u:'min', g:30}, v)]; }));

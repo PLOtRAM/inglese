@@ -862,15 +862,17 @@ function confetti(){
 /* ---------- OGGI ---------- */
 let bumpK = null;
 function setMin(k, v){
-  bumpK = k; achSnapshot(); const q0 = qSnap();
+  bumpK = k; achSnapshot(); const q0 = qSnap(), bank0 = streakOf(days, TODAY).bank;
   const before = today(), g = goal();
   const t = Object.assign({}, before, {[k]: Math.max(0, v)});
   days[TODAY] = {date:TODAY, sem:t.sem, quo:t.quo, tec:t.tec, u:'min', g};
   if(k==='quo' && state) state = Object.assign({}, state, {quo: advanceEp(state.quo, t.quo-before.quo)});
   logEv(NAMES[k]+': '+before[k]+'′ → '+t[k]+'′'); const fresh = achCheck(); renderAll(); queueSave(); achNotify(fresh, questMsg(q0, ['min','obj']));
   const was = K.every(x => before[x]>=g), is = K.every(x => t[x]>=g);
-  if(!was && is){ confetti(); toast('Obiettivo di oggi raggiunto: '+g*3+'′'); }
-  else if(!K.every(x => before[x]>=MIN) && K.every(x => t[x]>=MIN)) toast('Minimo fatto: la serie continua');
+  const jol = streakOf(days, TODAY).bank > bank0 ? ' · Jolly guadagnato 🛡️ (7 giorni di fila)' : '';
+  if(!was && is){ confetti(); toast('Obiettivo di oggi raggiunto: '+g*3+'′'+jol); }
+  else if(!K.every(x => before[x]>=MIN) && K.every(x => t[x]>=MIN)) toast('Minimo fatto: la serie continua'+jol);
+  else if(jol){ confetti(); toast('Jolly guadagnato 🛡️ (7 giorni di fila)'); }
 }
 function renderToday(){
   const p = todayPlan(), g = p.target, t = today(), total = sum(t);
@@ -1164,7 +1166,23 @@ function renderSenses(w, only){      // only: 'ex' = solo gli esempi
    È solo una proposta: non entra nel ripasso finché non la accetti o non la correggi. Se la rete manca o un servizio non risponde, restituisce null. */
 const apiJson = async url => { const r = await fetch(url, {signal: AbortSignal.timeout(7000)}); if(!r.ok) throw 0; return r.json(); };
 const flat = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-async function proposeFor(word){
+/* Prima scelta: il servizio gratuito di Google Traduttore (indirizzo non documentato, senza chiave): dà i significati per categoria con un peso, e frasi d'esempio vere.
+   Se non risponde o cambia formato, ripiego su MyMemory + Free Dictionary qui sotto. */
+const GT = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=it&dt=t&';
+const POS = {noun:'nome', verb:'verbo', adjective:'aggettivo', adverb:'avverbio'};
+const gtText = j => (j[0] || []).map(x => (x && x[0]) || '').join('').trim();
+async function proposeGoogle(word){
+  const j = await apiJson(GT+'dt=bd&dt=ex&q='+encodeURIComponent(word)), poss = j[1] || [], many = poss.length > 1, ms = [], low = word.toLowerCase();
+  poss.forEach(p => { const d = p[2] || [], top = d.length ? d[0][3] : 0; d.forEach((x,i) => { const m = x[0]+(many ? ' ('+(POS[p[0]] || p[0])+')' : ''); if(ms.length < 4 && x[0].toLowerCase()!==low && (i===0 || x[3] >= top*.25) && !ms.includes(m)) ms.push(m); }); });
+  const main = gtText(j); if(!ms.length && main && main.toLowerCase()!==low) ms.push(main);
+  if(!ms.length) return null;
+  const exArr = j.find(x => Array.isArray(x) && Array.isArray(x[0]) && Array.isArray(x[0][0]) && /<b>/.test(String(x[0][0][0])));
+  const es = (exArr ? exArr[0] : []).slice(0, 2).map(x => String(x[0]).replace(/<\/?b>/g, ''));
+  const its = await Promise.all(es.map(e => apiJson(GT+'q='+encodeURIComponent(e)).then(gtText, () => '')));
+  return {t: ms.join('; '), ex: es.map((e,i) => e+(its[i] ? ' — '+its[i] : '')).join('\n')};
+}
+const proposeFor = async word => { try{ const p = await proposeGoogle(word); if(p) return p; }catch(_){} return proposeMM(word); };
+async function proposeMM(word){
   try{
     const j = await apiJson('https://api.mymemory.translated.net/get?langpair=en|it&q='+encodeURIComponent(word)), seen = new Set(), ts = [];
     if(+j.responseStatus!==200) return null;      // quota finita: il servizio risponde con una frase di avviso, non va proposta come traduzione
@@ -1184,13 +1202,39 @@ async function proposeFor(word){
 }
 async function autoPropose(id, word){      // dopo il salvataggio: la proposta si aggancia alla parola giusta, se c'è ancora e non ha già una traduzione
   const p = await proposeFor(word); if(!p) return;
+  patchWord(id, {prop:p}, 'proposta automatica: '+word, c => !c.t && !c.prop);
+}
+function patchWord(id, patch, ev, cond){      // modifica una parola per id quando non stai scrivendo (altrimenti il ridisegno cancella il testo)
   let tries = 0;
-  const apply = () => {
-    const a = document.activeElement; if(a && /INPUT|TEXTAREA/.test(a.tagName) && ++tries < 20) return setTimeout(apply, 3000);      // non ridisegnare sotto il cursore mentre scrivi
-    const ws = wordsOf(), cur = ws.find(x => x.id===id); if(!cur || cur.t || cur.prop) return;
-    saveState({words: ws.map(x => x.id===id ? Object.assign({}, x, {prop:p}) : x)}, 'proposta automatica: '+word);
+  const run = () => {
+    const a = document.activeElement; if(a && /INPUT|TEXTAREA/.test(a.tagName) && ++tries < 20) return setTimeout(run, 3000);
+    const ws = wordsOf(), cur = ws.find(x => x.id===id); if(!cur || (cond && !cond(cur))) return;
+    saveState({words: ws.map(x => x.id===id ? Object.assign({}, x, patch) : x)}, ev);
   };
-  apply();
+  run();
+}
+/* Controllo ortografico gratuito (Datamuse, senza chiave): scrivi quello che senti, quindi la parola può essere sbagliata. Dà le parole scritte in modo simile e quelle che suonano uguale.
+   Vuoto = la parola esiste (o è una frase: non controllo). Non è mai bloccante: sono solo suggerimenti. */
+async function spellCheck(word){
+  if(!/^[a-z][a-z'’-]*$/i.test(word)) return [];
+  try{
+    const w = word.replace(/’/g, "'").toLowerCase(), get = k => apiJson('https://api.datamuse.com/words?md=f&max=8&'+k+'='+encodeURIComponent(w));
+    const fr = x => parseFloat((((x.tags || []).find(t => t.startsWith('f:'))) || 'f:0').slice(2));      // frequenza per milione di parole
+    const [sp, sl] = await Promise.all([get('sp'), get('sl')]), exact = sp.find(x => x.word.toLowerCase()===w);
+    if(exact && fr(exact) >= .05) return [];      // esiste e non è rarissima: va bene (i refusi comuni come «recieve» hanno frequenza quasi zero)
+    const alts = [...new Set(sp.slice(0, 3).concat(sl.slice(0, 4)).filter(x => /^[a-z']+$/i.test(x.word) && x.word.toLowerCase()!==w && fr(x) >= (exact ? 1 : .1)).map(x => x.word))].slice(0, 4);
+    return alts;
+  }catch(_){ return []; }
+}
+async function autoCheck(id, word){      // dopo il salvataggio: prima l'ortografia; se la parola è sospetta chiedo conferma, altrimenti propongo la traduzione
+  const alts = await spellCheck(word);
+  if(alts.length) patchWord(id, {maybe: alts}, 'forse intendevi: '+word+' → '+alts.join(', '), c => !c.t && !c.chk);
+  else autoPropose(id, word);
+}
+function fixWord(id, newWord){
+  const ws = wordsOf(), cur = ws.find(x => x.id===id); if(!cur) return;
+  saveState({words: ws.map(x => { if(x.id!==id) return x; const o = Object.assign({}, x, {w:newWord, chk:1}); delete o.maybe; return o; })}, 'parola corretta: '+cur.w+' → '+newWord);
+  if(!cur.t) autoPropose(id, newWord);
 }
 function renderWords(){
   const all = wordsOf(), learned = all.filter(w => w.got).length;
@@ -1216,7 +1260,11 @@ function renderWords(){
             el('button',{type:'button', class:'ghost', onclick:()=>{ put(all.map(x => { if(x.id!==w.id) return x; const o = Object.assign({}, x); delete o.prop; return o; }), 'proposta scartata: '+w.w); }}, 'Scarta')))
         : el('button',{type:'button', class:'tr add-tr', onclick:()=>startEdit(w)}, 'aggiungi traduzione ed esempio');
     ul.append(el('li',{class:'word'+(w.got?' got':'')},
-      el('div',{class:'main'}, el('span',{class:'w'}, w.w)), tr,
+      el('div',{class:'main'}, el('span',{class:'w'}, w.w)),
+      w.maybe && !w.t ? el('div',{class:'prop'}, el('span',{class:'hint'}, 'Non trovo «'+w.w+'» nel dizionario. Forse intendevi:'), el('div',{class:'chips'},
+        ...w.maybe.map(s => el('button',{type:'button', onclick:()=>fixWord(w.id, s)}, s)),
+        el('button',{type:'button', onclick:()=>{ put(all.map(x => { if(x.id!==w.id) return x; const o = Object.assign({}, x, {chk:1}); delete o.maybe; return o; }), 'ortografia confermata: '+w.w); autoPropose(w.id, w.w); }}, 'È giusta così'))) : null,
+      tr,
       el('div',{class:'meta'}, w.src ? el('span',{class:'loc'}, w.src) : null, el('span',{}, fmtDay(w.date)),
         w.t && !w.got ? el('span',{}, !w.due ? '· nuova' : w.due<=TODAY ? '· da ripassare oggi' : '· ripasso tra '+fmtIvl(daysBetween(TODAY,w.due))) : null,
         el('div',{class:'acts'},
@@ -1246,7 +1294,7 @@ $('wform').onsubmit = e => {
   else ws = ws.slice(-499).concat({id, w, t, ex, src, date: TODAY, got:false});
   const edited = !!editId; endEdit();
   saveState({words: ws}, (edited ? 'parola modificata: ' : 'parola aggiunta: ')+w+(t ? ' = '+t : '')); if(document.activeElement) document.activeElement.blur();
-  if(!t) autoPropose(id, w);      // senza traduzione: la cerco io, la trovi da controllare nell'elenco
+  if(!t) autoCheck(id, w);      // senza traduzione: controllo la scrittura e cerco la traduzione, da controllare nell'elenco
   const b = $('w-save'); b.textContent = '✓ '+(edited ? 'Aggiornata' : 'Aggiunta'); b.classList.add('ok');
   setTimeout(() => { b.classList.remove('ok'); if(!editId) b.textContent = 'Aggiungi parola'; }, 1300);
 };
@@ -1272,11 +1320,19 @@ $('qform').onsubmit = e => {
   const id = Date.now().toString(36);
   saveState({words: wordsOf().slice(-499).concat({id, w, t:'', ex:'', src:'', date: TODAY, got:false})}, 'parola al volo: '+w);      // nessuna provenienza: la scegli dopo, se vuoi
   closeSheet(); toast('Parola aggiunta: '+w);
-  autoPropose(id, w);
+  autoCheck(id, w);
 };
+let spellOk = '';      // parola che Pavel ha confermato giusta nonostante il controllo
 $('w-auto').onclick = async () => {
   const w = $('w-word').value.trim(), note = $('w-autonote'); if(!w) return $('w-word').focus();
   note.hidden = false; note.textContent = 'Cerco…';
+  const alts = spellOk===w ? [] : await spellCheck(w);
+  if(alts.length){      // forse l'hai scritta come l'hai sentita: propongo le parole vere più vicine, tu scegli
+    note.textContent = 'Non trovo «'+w+'» nel dizionario. Forse intendevi: ';
+    alts.forEach(s => note.append(el('button',{type:'button', class:'ghost', onclick:()=>{ $('w-word').value = s; $('w-auto').click(); }}, s)));
+    note.append(el('button',{type:'button', class:'ghost', onclick:()=>{ spellOk = w; $('w-auto').click(); }}, 'È giusta così'));
+    return;
+  }
   const p = await proposeFor(w);
   if(!p){ note.textContent = 'Non ho trovato niente (o manca la rete): scrivila tu.'; return; }
   if(!$('w-tr').value.trim()) $('w-tr').value = p.t;
@@ -1386,7 +1442,7 @@ function renderProgress(){
   $('lvl-next').textContent = nx ? hh(s.hours)+' / '+nx[0]+' h · poi '+nx[1] : hh(s.hours)+' h';
   $('lvl-bar').style.width = (nx ? Math.min(100,(s.hours-lv[0])/(nx[0]-lv[0])*100) : 100)+'%';
   $('s-streak').textContent = s.streak; $('s-best').textContent = s.best; $('s-hours').textContent = hh(s.hours); $('s-perfect').textContent = s.perfect;
-  $('jolly').textContent = s.bank; jollyInfo = 'Jolly: '+s.bank+'. Tengono ferma la serie: se salti un giorno ne parte uno da solo. Ne arriva uno al mese e si accumulano.'+(s.used.length ? ' Usati: '+s.used.map(fmtDay).join(', ')+'.' : '');
+  $('jolly').textContent = s.bank; jollyInfo = 'Jolly: '+s.bank+'. Tengono ferma la serie: se salti un giorno ne parte uno da solo. Se ne guadagna uno ogni 7 giorni di fila col minimo, e se ne tengono al massimo 2.'+(s.used.length ? ' Usati: '+s.used.map(fmtDay).join(', ')+'.' : '');
 
   // settimana in corso
   const wk = $('week'); wk.textContent = '';
@@ -1479,9 +1535,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-4';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-5';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.14-5', ['Controllo delle parole che scrivi come le senti: se non esistono, ti propone quelle vere più vicine (es. «complay» → comply, complain); «È giusta così» per tenerla.', 'Traduzione proposta molto migliore: più significati per categoria (nome, verbo…) e frasi d’esempio tradotte.', 'Jolly: se ne guadagna uno ogni 7 giorni di fila col minimo, al massimo 2. Non arriva più da solo ogni mese; quello che avevi resta.']],
   ['2026.11.14-4', ['La proposta automatica di traduzione non appare mentre stai scrivendo e non si fida delle risposte d’errore del servizio.']],
   ['2026.11.14-3', ['Parole: ogni parola ha traduzione con più significati numerati e un esempio per ciascuno; anche nelle carte del ripasso.', '«Proponi traduzione ed esempio» cerca da solo (gratis): la proposta resta da controllare e non entra nel ripasso finché non la accetti.', 'Niente più provenienza automatica: restano solo Semplificato, Quotidiano e Tecnico, a scelta.', 'Progressi riordinato: settimana con missioni, ultimi traguardi, percorsi e mesi a tendina. Gli spezzoni chiusi sono in Guida.', 'La linea del minimo sta sotto la tacca dei 15′.']],
   ['2026.11.14-2', ['Salvataggio più prudente quando l’automazione scrive nello stesso momento.', 'Senza rete «Aggiorna l’app» non cancella più i file salvati.', 'Caratteri e icone si aprono subito, senza ricontrollare ogni volta.']],
