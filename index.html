@@ -1085,7 +1085,7 @@ function answer(g){
   const patch = {ivl:r.ivl, ease:Math.round(r.ease*100)/100, lapses:r.lapses, reps:(w.reps||0)+1};
   if(r.ivl>0) patch.due = addDays(TODAY, r.ivl);
   const p = {words: ws.map(x => x.id===id ? Object.assign({}, x, patch) : x),
-    revlog: ((state && state.revlog) || []).concat({d:TODAY, w:id, g, i:w.ivl||0, e:w.ease||2.5, l:lateOf(w), n:r.ivl}).slice(-1500)};      // registro di ogni voto (data, parola, voto, intervallo ed ease prima, ritardo, intervallo dopo): serve se un giorno si passa a FSRS
+    revlog: ((state && state.revlog) || []).concat({d:TODAY, w:id, g, i:w.ivl||0, e:w.ease||2.5, l:lateOf(w), n:r.ivl})};      // registro di ogni voto (data, parola, voto, intervallo ed ease prima, ritardo, intervallo dopo), senza limite: serve se un giorno si passa a FSRS. shortcut: oltre ~900 KB di data.json l'API di GitHub non lo legge più, allora spostare revlog in un file a parte
   if(!quiz.queue.length){
     const n = quiz.done; quiz = null;
     p.revDays = [...new Set([...((state && state.revDays) || []), TODAY])].slice(-200);
@@ -1535,9 +1535,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-11';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.14-12';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.14-12', ['Il registro dei ripassi tiene tutti i voti, senza limite.']],
   ['2026.11.14-11', ['Ogni voto del ripasso viene salvato in un registro (non si vede): servirà se un giorno si passa a FSRS.']],
   ['2026.11.14-10', ['Dopo un errore, «Facile» dà un giorno in più di «Bene», come in Anki.']],
   ['2026.11.14-9', ['Il ripasso delle parole segue l’algoritmo di Anki più da vicino: bonus se rivedi in ritardo, intervalli leggermente variati e Bene sempre sopra Difficile.']],
