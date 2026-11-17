@@ -626,19 +626,19 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
           <p><span class="loc">Auto</span>Un episodio alla volta, finché non capisci l’80%. Se la tratta finisce prima, riprendi da lì; a fine episodio ricomincia dall’inizio. Quando lo chiudi passi al podcast dopo nella lista e prendi il suo episodio più recente adatto. Finita la lista, ricominci.</p>
           <ol>
             <li><a href="https://podcasts.apple.com/it/podcast/id730188152" target="_blank" rel="noopener">At The Money</a> (dentro il feed di Masters in Business): Barry Ritholtz e un ospite, spesso autore di un libro. Un tema di gestione del denaro a episodio, 13-26′. Spezzone: l’episodio intero.</li>
-                        <li><a href="https://podcasts.apple.com/it/podcast/id1739582836" target="_blank" rel="noopener">Money Stuff</a>: Matt Levine e Katie Greifeld parlano di Wall Street e finanza con ironia (la colonna di Bloomberg Opinion in audio). Uscita il venerdì, 25-60′. Spezzone: i primi 15-20′.</li>
-            <li><a href="https://podcasts.apple.com/it/podcast/id1038108799" target="_blank" rel="noopener">Stephanomics</a>: Stephanie Flanders (probabilmente voce britannica, non verificato) collega geopolitica, commercio, tecnologia e mercati. Settimanale, circa 30′. Spezzone: i primi 15-20′.</li>
-            <li><a href="https://podcasts.apple.com/it/podcast/id1621165150" target="_blank" rel="noopener">Tech Disruptors</a> (Bloomberg Intelligence): interviste ai dirigenti di aziende tech su AI, cloud, cybersecurity, fintech. Due a settimana, 40-55′. Lessico aziendale e specialistico, pensato per investitori professionisti. Spezzone: i primi 15-20′.</li>
             <li><a href="https://podcasts.apple.com/it/podcast/id1654809850" target="_blank" rel="noopener">Merryn Talks Money</a>, britannico. Lunedì intervista a un gestore (~36′), mercoledì serie o risposte agli ascoltatori (~22′), venerdì Markets Wrap con John Stepek (~20′; più difficile da capire, se non ti riesce usa «Passa al prossimo»). Spezzone: un episodio del mercoledì o del venerdì, intero.</li>
             <li><a href="https://podcasts.apple.com/it/podcast/id1812469316" target="_blank" rel="noopener">Everybody’s Business</a>: chiacchierata tra Max Chafkin e Stacey Vanek Smith con giornalisti ospiti, una o due storie, 31-42′. Spezzone: i primi 15-20′ (la prima storia).</li>
-            <li><a href="https://podcasts.apple.com/it/podcast/id1056200096" target="_blank" rel="noopener">Odd Lots</a>: Joe Weisenthal e Tracy Alloway con un esperto, un tema a puntata, 32-53′. Spezzone: i primi 15-20′. Tema più tecnico, per ultimo.</li>
+            <li><a href="https://podcasts.apple.com/it/podcast/id1056200096" target="_blank" rel="noopener">Odd Lots</a>: Joe Weisenthal e Tracy Alloway con un esperto, un tema a puntata, 32-53′. Spezzone: i primi 15-20′. Tema più tecnico.</li>
+            <li><a href="https://podcasts.apple.com/it/podcast/id1739582836" target="_blank" rel="noopener">Money Stuff</a>: Matt Levine e Katie Greifeld parlano di Wall Street e finanza con ironia (la colonna di Bloomberg Opinion in audio). Uscita il venerdì, 25-60′. Spezzone: i primi 15-20′.</li>
+            <li><a href="https://podcasts.apple.com/it/podcast/id1038108799" target="_blank" rel="noopener">Stephanomics</a>: Stephanie Flanders (probabilmente voce britannica, non verificato) collega geopolitica, commercio, tecnologia e mercati. Settimanale, circa 30′. Spezzone: i primi 15-20′.</li>
+            <li><a href="https://podcasts.apple.com/it/podcast/id1621165150" target="_blank" rel="noopener">Tech Disruptors</a> (Bloomberg Intelligence): interviste ai dirigenti di aziende tech su AI, cloud, cybersecurity, fintech. Due a settimana, 40-55′. Lessico aziendale e specialistico, pensato per investitori professionisti. Spezzone: i primi 15-20′.</li>
           </ol>
           <p><b>Novità</b>, al ritorno dal campo (libero, fuori dai blocchi e senza riascolto): i primi 20′ dell’ultimo episodio.</p>
           <div class="tbl"><table>
             <thead><tr><th></th><th>1° allenamento</th><th>2°</th><th>3° (venerdì)</th></tr></thead>
             <tbody>
-              <tr><td>Settimana A</td><td>At The Money</td><td>Money Stuff</td><td>Everybody’s Business</td></tr>
-              <tr><td>Settimana B</td><td>Merryn</td><td>Odd Lots</td><td>Quello che ti attira di più (Stephanomics, Tech Disruptors)</td></tr>
+              <tr><td>Settimana A</td><td>At The Money</td><td>Merryn</td><td>Everybody’s Business</td></tr>
+              <tr><td>Settimana B</td><td>Odd Lots</td><td>Money Stuff</td><td>Stephanomics o Tech Disruptors (a turno)</td></tr>
             </tbody>
           </table></div>
           <p class="hint">Su Apple Podcasts: tieni premuto l’episodio e tocca Scarica, poi in Impostazioni, App, Podcast disattiva “Rimuovi i download riprodotti”. Lo trovi in Libreria, Scaricati: avvialo dal telefono prima di partire.</p>
@@ -1535,9 +1535,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.17-2';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.17-3';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.17-3', ['Ordine dei podcast tecnici: At The Money, Merryn, Everybody’s Business, Odd Lots, Money Stuff, Stephanomics, Tech Disruptors.']],
   ['2026.11.17-2', ['Podcast tecnici: tolto Big Take, aggiunti Money Stuff, Stephanomics e Tech Disruptors.']],
   ['2026.11.17-1', ['Nuovo tasto «Passa al prossimo» sotto le percentuali: cambi spezzone anche senza aver capito l’80%.', 'Gli spezzoni lasciati non contano come chiusi nei traguardi e si vedono come «lasciato».', 'Traduzioni ed esempi delle parole riviste.']],
   ['2026.11.14-12', ['Il registro dei ripassi tiene tutti i voti, senza limite.']],

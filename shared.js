@@ -1,7 +1,7 @@
 // Regole comuni all'app e al report del mattino (che gira su GitHub Actions nel repository dei dati).
 const K = ['sem','quo','tec'];
 const NAMES = {sem:'Semplificato', quo:'Quotidiano', tec:'Tecnico'};
-const TOPICS = ['At The Money','Merryn','Everybody’s Business','Money Stuff','Stephanomics','Tech Disruptors','Odd Lots'];
+const TOPICS = ['At The Money','Merryn','Everybody’s Business','Odd Lots','Money Stuff','Stephanomics','Tech Disruptors'];
 const nextTopic = t => TOPICS[(TOPICS.indexOf(t)+1)%TOPICS.length];
 const pad = n => String(n).padStart(2,'0');
 const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
