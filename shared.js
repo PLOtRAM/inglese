@@ -41,7 +41,8 @@ function planOf(state, now, wd){
 function pickEpIn(feed, name){
   const eps = (feed && feed.pods && feed.pods[name]) || [];
   if(name==='Stephanomics') return eps.find(e => e.min>=15) || eps[0];     // salta i trailer da 2′
-  if(name==='Merryn') return eps.find(e => e.min<=32) || eps[0];     // mercoledì o venerdì, non l'intervista lunga
+  // Merryn: solo il mercoledì (il venerdì c'è Stepek, che Pavel non capisce); se non ce n'è uno tra gli ultimi, il più recente che non sia di venerdì
+  if(name==='Merryn') return eps.find(e => new Date(e.date+'T12:00').getDay()===3) || eps.find(e => new Date(e.date+'T12:00').getDay()!==5) || eps[0];
   return eps[0];
 }
 // Pulisce i significati proposti da un servizio (MyMemory): toglie virgolette e punteggiatura finale, divide «a/b», scarta frasi con ? o !, toglie i doppioni (senza badare a maiuscole e accenti) e la parola stessa.
