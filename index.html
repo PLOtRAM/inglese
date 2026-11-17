@@ -1184,12 +1184,9 @@ async function proposeGoogle(word){
 const proposeFor = async word => { try{ const p = await proposeGoogle(word); if(p) return p; }catch(_){} return proposeMM(word); };
 async function proposeMM(word){
   try{
-    const j = await apiJson('https://api.mymemory.translated.net/get?langpair=en|it&q='+encodeURIComponent(word)), seen = new Set(), ts = [];
+    const j = await apiJson('https://api.mymemory.translated.net/get?langpair=en|it&q='+encodeURIComponent(word));
     if(+j.responseStatus!==200) return null;      // quota finita: il servizio risponde con una frase di avviso, non va proposta come traduzione
-    [{translation: j.responseData && j.responseData.translatedText}].concat((j.matches || []).filter(m => flat(m.segment || '')===flat(word))).forEach(m => {
-      const t = (m.translation || '').replace(/[.!]+$/, '').trim(), k = t.toLowerCase();
-      if(t && k!==word.toLowerCase() && !seen.has(k) && ts.length < 3){ seen.add(k); ts.push(t); }
-    });
+    const ts = cleanMeanings([j.responseData && j.responseData.translatedText].concat((j.matches || []).filter(m => flat(m.segment || '')===flat(word)).map(m => m.translation)), word, 3);
     if(!ts.length) return null;
     let ex = '';
     if(/^[a-z][a-z'-]*$/i.test(word)) try{
@@ -1535,9 +1532,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.17-3';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.17-4';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.17-4', ['Le traduzioni proposte arrivano più pulite: senza virgolette, punti interrogativi e doppioni.']],
   ['2026.11.17-3', ['Ordine dei podcast tecnici: At The Money, Merryn, Everybody’s Business, Odd Lots, Money Stuff, Stephanomics, Tech Disruptors.']],
   ['2026.11.17-2', ['Podcast tecnici: tolto Big Take, aggiunti Money Stuff, Stephanomics e Tech Disruptors.']],
   ['2026.11.17-1', ['Nuovo tasto «Passa al prossimo» sotto le percentuali: cambi spezzone anche senza aver capito l’80%.', 'Gli spezzoni lasciati non contano come chiusi nei traguardi e si vedono come «lasciato».', 'Traduzioni ed esempi delle parole riviste.']],

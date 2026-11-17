@@ -44,6 +44,16 @@ function pickEpIn(feed, name){
   if(name==='Merryn') return eps.find(e => e.min<=32) || eps[0];     // mercoledì o venerdì, non l'intervista lunga
   return eps[0];
 }
+// Pulisce i significati proposti da un servizio (MyMemory): toglie virgolette e punteggiatura finale, divide «a/b», scarta frasi con ? o !, toglie i doppioni (senza badare a maiuscole e accenti) e la parola stessa.
+const cleanMeanings = (arr, word, max) => {
+  const norm = x => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, '').trim(), seen = new Set([norm(word || '')]), out = [];
+  (arr || []).forEach(x => String(x || '').split('/').forEach(p => {
+    const t = p.replace(/^[s"'«“”‘’]+|[s"'»“”‘’.,;:]+$/g, '').trim();
+    if(!t || /[?!]/.test(t) || seen.has(norm(t)) || out.length >= (max || 3)) return;
+    seen.add(norm(t)); out.push(t);
+  }));
+  return out;
+};
 const epTitle = e => e.title.replace(/^at the money:\s*/i,'');
 const epLabel = (name, e) => name+' · '+epTitle(e)+' ('+e.min+'′)';
 // Parola: significati e esempi. `t` = significati separati da «;» (sinonimi con la virgola); `ex` = una riga per esempio, «frase inglese — traduzione» (vale anche «|»).
@@ -238,4 +248,4 @@ function achieve(days, state, today, goalToday){
   return {vals, earned, week: weekMissions(cur), weekGold: gold(cur)};
 }
 
-if(typeof module!=='undefined') module.exports = {dayQuests, DAY_QUESTS, FULL_BONUS, minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, epTitle, epLabel, dueOf, senses, PILLARS, pillarOf, srs, fuzzIvl, fuzzSeed};
+if(typeof module!=='undefined') module.exports = {dayQuests, DAY_QUESTS, FULL_BONUS, minsOf, streakOf, EP_LEN, advanceEp, paceOf, nextBlockLabel, LEVELS, levelOf, TRACKS, WEEK_GOALS, weekMissions, achieve, quoLabel, K, NAMES, TOPICS, nextTopic, ymd, mondayOf, WEEKS, dayPlan, planOf, pickEpIn, cleanMeanings, epTitle, epLabel, dueOf, senses, PILLARS, pillarOf, srs, fuzzIvl, fuzzSeed};
