@@ -1,7 +1,7 @@
 // Regole comuni all'app e al report del mattino (che gira su GitHub Actions nel repository dei dati).
 const K = ['sem','quo','tec'];
 const NAMES = {sem:'Semplificato', quo:'Quotidiano', tec:'Tecnico'};
-const TOPICS = ['At The Money','Big Take','Merryn','Everybody’s Business','Odd Lots'];
+const TOPICS = ['At The Money','Merryn','Everybody’s Business','Money Stuff','Stephanomics','Tech Disruptors','Odd Lots'];
 const nextTopic = t => TOPICS[(TOPICS.indexOf(t)+1)%TOPICS.length];
 const pad = n => String(n).padStart(2,'0');
 const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -40,7 +40,7 @@ function planOf(state, now, wd){
 // Episodio da prendere per un podcast, tra gli ultimi usciti
 function pickEpIn(feed, name){
   const eps = (feed && feed.pods && feed.pods[name]) || [];
-  if(name==='Big Take') return eps.find(e => !/^weekend listen/i.test(e.title) && e.min<=30) || eps[0];
+  if(name==='Stephanomics') return eps.find(e => e.min>=15) || eps[0];     // salta i trailer da 2′
   if(name==='Merryn') return eps.find(e => e.min<=32) || eps[0];     // mercoledì o venerdì, non l'intervista lunga
   return eps[0];
 }
@@ -55,7 +55,7 @@ function senses(w){
 }
 // Provenienza: solo i tre pilastri. I dati vecchi (Peppa Pig, The Office, nomi dei podcast) si leggono come il pilastro giusto.
 const PILLARS = ['Semplificato','Quotidiano','Tecnico'];
-const pillarOf = s => PILLARS.includes(s) ? s : s==='Peppa Pig' ? 'Semplificato' : s==='The Office' ? 'Quotidiano' : TOPICS.includes(s) ? 'Tecnico' : '';
+const pillarOf = s => PILLARS.includes(s) ? s : s==='Peppa Pig' ? 'Semplificato' : s==='The Office' ? 'Quotidiano' : TOPICS.includes(s) || s==='Big Take' ? 'Tecnico' : '';
 /* ---------- Ripasso delle parole: l'algoritmo di Anki (scheduler classico SM-2, letto in rslib/src/scheduler/states di ankitects/anki) ----------
    Uguale ad Anki: facilità iniziale 2,5 (minimo 1,3; Di nuovo −0,2, Difficile −0,15, Facile +0,15), Difficile ×1,2, Facile ×1,3, intervallo dopo un errore 1 giorno,
    primo intervallo 1 giorno (4 con Facile), bonus per il ritardo (metà dei giorni di ritardo con Bene, tutti con Facile), regole per i ripassi in anticipo,
