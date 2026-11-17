@@ -113,6 +113,8 @@ const manyWords = Array.from({length:12}, (_,i) => ({date:'2026-11-10', got:i<10
 A = S.achieve({}, {words: manyWords, revDays:['2026-11-10','2026-11-11','2026-11-12'], history:[{}]}, '2026-11-12', 30);
 assert.ok(['parole:10','imparate:10','ripasso:3','spezzoni:1'].every(id => A.earned.includes(id)));
 assert.equal(A.week.find(m => m.id==='par').val, 12);
+// uno spezzone lasciato senza l'80% non vale come chiuso
+assert.equal(S.achieve({}, {history:[{skip:1},{}]}, '2026-11-12', 30).vals.spezzoni, 1);
 // settimana d'oro: lunedì-domenica contano a sé; una nuova settimana riparte da zero
 const gold = {days:dayList('2026-11-09', 7, {sem:30, quo:30, tec:30}), state:{words:Array.from({length:5}, () => ({date:'2026-11-10'})), revDays:['2026-11-09','2026-11-10','2026-11-11','2026-11-12']}};
 A = S.achieve(gold.days, gold.state, '2026-11-15', 30);              // domenica

@@ -229,7 +229,7 @@ function achieve(days, state, today, goalToday){
   [st.sem, st.tec].concat(hist).forEach(x => ((x && x.comp) || []).forEach(c => dates.add(c.d)));
   let punti = 0, piene = 0;
   dates.forEach(dt => { if(!dt) return; const q = dayQuests(days, st, dt, dt===today ? goalToday : ((days[dt] && days[dt].g) || 30)); punti += q.pts; if(q.full) piene++; });
-  const vals = {serie: streakOf(days, today).best, obiettivo: perfect, spezzoni: hist.length, parole: ws.length, punti, piene,
+  const vals = {serie: streakOf(days, today).best, obiettivo: perfect, spezzoni: hist.filter(h => !h.skip).length, parole: ws.length, punti, piene,
     imparate: ws.filter(x => x.got || x.ivl>=21).length, ripasso: new Set(revs).size, settimane: Object.values(weeks).filter(gold).length};
   const earned = []; let count = 0, started = 0;
   TRACKS.filter(t => !t.meta).forEach(t => { let n = 0; t.tiers.forEach(([need]) => { if(vals[t.id] >= need){ earned.push(t.id+':'+need); n++; } }); count += n; if(n) started++; });

@@ -626,8 +626,8 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
           <p><span class="loc">Auto</span>Un episodio alla volta, finché non capisci l’80%. Se la tratta finisce prima, riprendi da lì; a fine episodio ricomincia dall’inizio. Quando lo chiudi passi al podcast dopo nella lista e prendi il suo episodio più recente adatto. Finita la lista, ricominci.</p>
           <ol>
             <li><a href="https://podcasts.apple.com/it/podcast/id730188152" target="_blank" rel="noopener">At The Money</a> (dentro il feed di Masters in Business): Barry Ritholtz e un ospite, spesso autore di un libro. Un tema di gestione del denaro a episodio, 13-26′. Spezzone: l’episodio intero.</li>
-            <li><a href="https://podcasts.apple.com/it/podcast/id1578096201" target="_blank" rel="noopener">Big Take</a>: Sarah Holder o David Gura con giornalisti Bloomberg. Una sola storia a puntata, 13-18′. Spezzone: l’episodio intero, meglio se poco legato alla notizia del giorno. Lo speciale della domenica non conta.</li>
-            <li><a href="https://podcasts.apple.com/it/podcast/id1654809850" target="_blank" rel="noopener">Merryn Talks Money</a>, britannico. Lunedì intervista a un gestore (~36′), mercoledì serie o risposte agli ascoltatori (~22′), venerdì Markets Wrap con John Stepek (~20′). Spezzone: un episodio del mercoledì o del venerdì, intero.</li>
+            <li><a href="https://podcasts.apple.com/it/podcast/id1578096201" target="_blank" rel="noopener">Big Take</a>: Sarah Holder o David Gura con giornalisti Bloomberg. Una sola storia a puntata, 13-18′: è la versione ridotta di una discussione più lunga, che rimanda all’ascolto completo altrove (nel weekend esce lo speciale). Spezzone: l’episodio intero, meglio se poco legato alla notizia del giorno. Lo speciale della domenica non conta.</li>
+            <li><a href="https://podcasts.apple.com/it/podcast/id1654809850" target="_blank" rel="noopener">Merryn Talks Money</a>, britannico. Lunedì intervista a un gestore (~36′), mercoledì serie o risposte agli ascoltatori (~22′), venerdì Markets Wrap con John Stepek (~20′; più difficile da capire, se non ti riesce usa «Passa al prossimo»). Spezzone: un episodio del mercoledì o del venerdì, intero.</li>
             <li><a href="https://podcasts.apple.com/it/podcast/id1812469316" target="_blank" rel="noopener">Everybody’s Business</a>: chiacchierata tra Max Chafkin e Stacey Vanek Smith con giornalisti ospiti, una o due storie, 31-42′. Spezzone: i primi 15-20′ (la prima storia).</li>
             <li><a href="https://podcasts.apple.com/it/podcast/id1056200096" target="_blank" rel="noopener">Odd Lots</a>: Joe Weisenthal e Tracy Alloway con un esperto, un tema a puntata, 32-53′. Spezzone: i primi 15-20′. Tema più tecnico, per ultimo.</li>
           </ol>
@@ -724,7 +724,7 @@ tr.is-today td{font-weight:700;background:color-mix(in srgb,var(--gold) 12%,tran
       </details>
 
       <details class="fold">
-        <summary>Spezzoni chiusi all’80%</summary>
+        <summary>Spezzoni chiusi o lasciati</summary>
         <div><p class="hint">Gli ultimi dieci, con quanto avevi capito a ogni riascolto.</p><div id="hist"></div></div>
       </details>
 
@@ -763,7 +763,7 @@ const ls = { get(k){ try{ return localStorage.getItem(k); }catch(e){ return null
 let days = {};            // data -> documento del giorno (minuti se u==='min', altrimenti vecchi blocchi da 15′)
 let log = [];             // cronologia delle azioni: {t:'AAAA-MM-GG HH:MM:SS', e:'cosa'}
 let state = null;         // documento state/current
-let openNext = null;      // quale traccia mostra il modulo "80%"
+let openNext = null, skipNext = false;      // quale traccia mostra il modulo "prossimo"; skipNext = ci si passa senza aver capito l'80%
 let editId = null;        // parola in modifica
 let wFilter = 'all', hideTr = ls.get('hideTr')==='1';
 
@@ -977,14 +977,15 @@ function renderNow(){
         const setComp = pc => {
           const a = cp.slice(-19), same = a.length && a[a.length-1].d===TODAY, off = same && a[a.length-1].p===pc;
           if(same) a.pop();                                    // un solo valore al giorno; toccare quello scelto lo toglie
-          if(!off){ a.push({d:TODAY, p:pc}); if(pc>=80) openNext = k; }
+          if(!off){ a.push({d:TODAY, p:pc}); if(pc>=80){ openNext = k; skipNext = false; } }
           saveState({[k]: Object.assign({}, cur, {comp:a})}, NAMES[k]+(off ? ': stima tolta' : ': capito '+pc+'%'));
         };
         const ch = el('div',{class:'chips scale', role:'group', 'aria-label':'Quanto hai capito'});
         [20,40,60,80,100].forEach(pc => ch.append(el('button',{type:'button','aria-pressed':String(lastP===pc), title: lastP===pc ? 'Tocca di nuovo per togliere' : null, onclick:()=>setComp(pc)}, pc+'%')));
         card.append(el('div',{class:'comp'},
           el('div',{class:'hint'}, 'Quanto hai capito?'),
-          ch));
+          ch,
+          el('button',{type:'button', class:'ghost', onclick:()=>{ openNext = k; skipNext = true; renderNow(); }}, 'Passa al prossimo (senza 80%)')));
       }
       if(openNext===k){
         const sug = k==='tec' && pickEp(nextTopic(cur.topic));      // propone l'episodio più recente del podcast dopo
@@ -993,12 +994,12 @@ function renderNow(){
           e.preventDefault();
           const label = nin.value.trim(); if(!label){ nin.focus(); return; }
           const hist = (state.history||[]).slice(-99);
-          hist.push({type:k, label:cur.label||'', topic:cur.topic||null, from:cur.since||TODAY, to:TODAY, comp:cur.comp||[]});
-          openNext = null;
-          saveState({[k]: Object.assign({}, cur, {label, since: TODAY, comp: []}, k==='tec' ? {topic: nextTopic(cur.topic), url: sug && label===epLabel(nextTopic(cur.topic), sug) ? sug.url || null : null} : {}), history: hist}, '80% '+NAMES[k]+': '+(cur.label||'')+' → '+label);
-          confetti(); toast('Spezzone chiuso all’80%. Avanti col prossimo.');
-        }}, el('span',{class:'hint'}, 'Hai capito l’80% di “'+(cur.label||'questo spezzone')+'”. '+(k==='tec' ? 'Tocca a '+nextTopic(cur.topic)+': scrivi quale episodio prendi.' : k==='sem' ? 'Ecco il prossimo blocco: correggilo se serve.' : 'Con cosa vai avanti?')), nin,
-          el('div',{class:'row'}, el('button',{type:'submit', class:'btn solid'}, 'Passo a questo'), el('button',{type:'button', class:'ghost', onclick:()=>{ openNext = null; renderNow(); }}, 'Annulla'))));
+          hist.push(Object.assign({type:k, label:cur.label||'', topic:cur.topic||null, from:cur.since||TODAY, to:TODAY, comp:cur.comp||[]}, skipNext ? {skip:1} : {}));
+          const sk = skipNext; openNext = null; skipNext = false;
+          saveState({[k]: Object.assign({}, cur, {label, since: TODAY, comp: []}, k==='tec' ? {topic: nextTopic(cur.topic), url: sug && label===epLabel(nextTopic(cur.topic), sug) ? sug.url || null : null} : {}), history: hist}, (sk ? 'saltato ' : '80% ')+NAMES[k]+': '+(cur.label||'')+' → '+label);
+          if(sk) toast('Spezzone lasciato senza l’80%. Avanti col prossimo.'); else { confetti(); toast('Spezzone chiuso all’80%. Avanti col prossimo.'); }
+        }}, el('span',{class:'hint'}, (skipNext ? 'Lasci “'+(cur.label||'questo spezzone')+'” senza averlo capito all’80%. ' : 'Hai capito l’80% di “'+(cur.label||'questo spezzone')+'”. ')+(k==='tec' ? 'Tocca a '+nextTopic(cur.topic)+': scrivi quale episodio prendi.' : k==='sem' ? 'Ecco il prossimo blocco: correggilo se serve.' : 'Con cosa vai avanti?')), nin,
+          el('div',{class:'row'}, el('button',{type:'submit', class:'btn solid'}, 'Passo a questo'), el('button',{type:'button', class:'ghost', onclick:()=>{ openNext = null; skipNext = false; renderNow(); }}, 'Annulla'))));
         setTimeout(() => nin.focus(), 0);
       }
     }
@@ -1351,7 +1352,7 @@ function stats(){
   });
   const sk = streakOf(days, TODAY), streak = sk.streak, best = sk.best, hours = total/60, li = levelOf(total);
   const ws = wordsOf();
-  return {total, hours, perfect, best, streak, bank: sk.bank, used: sk.used, li, words: ws.length, learned: ws.filter(w => w.got || w.ivl>=21).length, revs: ((state && state.revDays) || []).length, passes: ((state && state.history) || []).length};
+  return {total, hours, perfect, best, streak, bank: sk.bank, used: sk.used, li, words: ws.length, learned: ws.filter(w => w.got || w.ivl>=21).length, revs: ((state && state.revDays) || []).length, passes: ((state && state.history) || []).filter(h => !h.skip).length};
 }
 /* ---------- TRAGUARDI: sblocco, salvataggio e annuncio ----------
    I traguardi ottenuti si salvano in state.ach (con la data), così un parola cancellata non ne toglie nessuno.
@@ -1473,14 +1474,14 @@ function renderProgress(){
   const mb = $('months'); mb.textContent = '';
   if(!Object.keys(mm).length) mb.append(el('p',{class:'hint'}, 'Qui compare il riepilogo di ogni mese, dal primo giorno segnato.'));
   Object.keys(mm).sort().reverse().slice(0,6).forEach(k => {
-    const m = mm[k], nw = wordsOf().filter(w => (w.date || '').startsWith(k)).length, np = ((state && state.history) || []).filter(h => (h.to || '').startsWith(k)).length;
+    const m = mm[k], nw = wordsOf().filter(w => (w.date || '').startsWith(k)).length, np = ((state && state.history) || []).filter(h => !h.skip && (h.to || '').startsWith(k)).length;
     mb.append(el('div',{}, el('h3',{}, new Date(k+'-15T12:00').toLocaleDateString('it-IT',{month:'long', year:'numeric'})),
       el('p',{class:'mono', style:'display:flex;flex-wrap:wrap;gap:2px 14px'}, ...K.map(x => el('span',{style:'color:var(--'+x+');white-space:nowrap'}, NAMES[x].slice(0,3)+' '+hm(m[x])))),
       el('p',{class:'hint'}, 'Totale '+hm(sum(m))+' · '+m.ok+' giorni col minimo · '+nw+' parole · '+np+' spezzoni chiusi')));
   });
   const hist = ((state && state.history) || []).slice(-10).reverse(), hb = $('hist'); hb.textContent = '';
   if(!hist.length) hb.append(el('p',{class:'empty'}, 'Ancora nessuno. Quando capisci l’80% di Peppa Pig o del podcast, chiudilo dalla vista Oggi e lo trovi qui.'));
-  else { const ul = el('ul',{class:'words'}); hist.forEach(h => ul.append(el('li',{class:'word t-'+h.type}, el('div',{class:'main'}, el('span',{class:'tag'}, NAMES[h.type]||''), el('b',{}, h.label)), el('div',{class:'meta'}, el('span',{}, (daysBetween(h.from,h.to)||1)+' giorni · chiuso il '+fmtDay(h.to)+(h.comp && h.comp.length ? ' · capito '+h.comp.map(c => c.p+'%').join(' → ') : '')))))); hb.append(ul); }
+  else { const ul = el('ul',{class:'words'}); hist.forEach(h => ul.append(el('li',{class:'word t-'+h.type}, el('div',{class:'main'}, el('span',{class:'tag'}, NAMES[h.type]||''), el('b',{}, h.label)), el('div',{class:'meta'}, el('span',{}, (daysBetween(h.from,h.to)||1)+' giorni · '+(h.skip ? 'lasciato' : 'chiuso')+' il '+fmtDay(h.to)+(h.comp && h.comp.length ? ' · capito '+h.comp.map(c => c.p+'%').join(' → ') : '')))))); hb.append(ul); }
 }
 
 function renderLog(){
@@ -1535,9 +1536,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.14-12';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.17-1';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.17-1', ['Nuovo tasto «Passa al prossimo» sotto le percentuali: cambi spezzone anche senza aver capito l’80%.', 'Gli spezzoni lasciati non contano come chiusi nei traguardi e si vedono come «lasciato».', 'Traduzioni ed esempi delle parole riviste.']],
   ['2026.11.14-12', ['Il registro dei ripassi tiene tutti i voti, senza limite.']],
   ['2026.11.14-11', ['Ogni voto del ripasso viene salvato in un registro (non si vede): servirà se un giorno si passa a FSRS.']],
   ['2026.11.14-10', ['Dopo un errore, «Facile» dà un giorno in più di «Bene», come in Anki.']],
