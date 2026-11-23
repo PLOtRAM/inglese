@@ -1532,9 +1532,10 @@ $('nosave').onclick = () => { go('guida'); setTimeout(() => $('h-set').scrollInt
 let jollyInfo = '';
 $('p-jolly').onclick = () => toast(jollyInfo, null, 9000);
 /* ---------- VERSIONE E AGGIORNAMENTO ---------- */
-const APP_VERSION = '2026.11.17-5';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
+const APP_VERSION = '2026.11.23-1';      // da cambiare a ogni pubblicazione: in Guida si vede subito se il telefono ha l'ultima
 // Novità in frasi semplici: la prima voce deve avere la stessa versione di APP_VERSION (lo controlla tools/check-app.js). In Guida se ne vedono le ultime tre.
 const NOVITA = [
+  ['2026.11.23-1', ['Corretto un errore nelle traduzioni proposte: perdevano la «s» iniziale (uonare, uperare).']],
   ['2026.11.17-5', ['Merryn: l’app propone solo gli episodi del mercoledì (non quelli del venerdì con Stepek).']],
   ['2026.11.17-4', ['Le traduzioni proposte arrivano più pulite: senza virgolette, punti interrogativi e doppioni.']],
   ['2026.11.17-3', ['Ordine dei podcast tecnici: At The Money, Merryn, Everybody’s Business, Odd Lots, Money Stuff, Stephanomics, Tech Disruptors.']],

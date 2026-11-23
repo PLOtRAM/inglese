@@ -49,7 +49,7 @@ function pickEpIn(feed, name){
 const cleanMeanings = (arr, word, max) => {
   const norm = x => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, '').trim(), seen = new Set([norm(word || '')]), out = [];
   (arr || []).forEach(x => String(x || '').split('/').forEach(p => {
-    const t = p.replace(/^[s"'«“”‘’]+|[s"'»“”‘’.,;:]+$/g, '').trim();
+    const t = p.replace(/^[\s"'«“”‘’]+|[\s"'»“”‘’.,;:]+$/g, '').trim();
     if(!t || /[?!]/.test(t) || seen.has(norm(t)) || out.length >= (max || 3)) return;
     seen.add(norm(t)); out.push(t);
   }));

@@ -117,6 +117,8 @@ assert.equal(A.week.find(m => m.id==='par').val, 12);
 assert.deepEqual(S.cleanMeanings(['Scontroso', 'Scontroso?', '"Scontroso/Irritabile', 'Ma no!'], 'grumpy'), ['Scontroso', 'Irritabile']);
 assert.deepEqual(S.cleanMeanings(['Piggy nel mezzo.', 'palla prigioniera', 'Palla Prigioniera', 'caffè', 'Caffe'], 'x', 3), ['Piggy nel mezzo', 'palla prigioniera', 'caffè']);
 assert.deepEqual(S.cleanMeanings(['grumpy'], 'grumpy'), []);
+// la pulizia non deve mangiare le lettere: parole che iniziano o finiscono per s
+assert.deepEqual(S.cleanMeanings(['superare', 'suonare.', 'sgocciolare (verbo)', 'case'], 'x', 4), ['superare', 'suonare', 'sgocciolare (verbo)', 'case']);
 // Merryn: solo il mercoledì; senza mercoledì, mai il venerdì
 assert.equal(S.pickEpIn({pods:{Merryn:[{date:'2026-11-16',min:36,title:'L'},{date:'2026-11-13',min:20,title:'V'},{date:'2026-11-11',min:25,title:'M'}]}},'Merryn').title,'M');
 assert.equal(S.pickEpIn({pods:{Merryn:[{date:'2026-11-13',min:20,title:'V'},{date:'2026-11-09',min:48,title:'L'}]}},'Merryn').title,'L');
